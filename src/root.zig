@@ -3,6 +3,8 @@ pub const zm = @import("zm");
 
 pub const Mesh = @import("./engine/Mesh.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
+pub const Transform = @import("./engine/Transform.zig");
+pub const Camera = @import("./engine/Camera.zig");
 
 pub const shorthands = @import("./engine/shorthands.zig");
 pub const uploadToBuffer = shorthands.uploadToBuffer;
