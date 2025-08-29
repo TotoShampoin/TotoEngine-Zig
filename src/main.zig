@@ -4,11 +4,6 @@ const engine = @import("toto-engine");
 const sdl3 = engine.sdl3;
 const zm = engine.zm;
 
-const Model = struct {
-    vertices: []const engine.Vertex,
-    indices: []const u32,
-};
-
 pub fn main() !void {
     try sdl3.init(.everything);
     defer sdl3.quit(.everything);
@@ -31,7 +26,7 @@ pub fn main() !void {
     });
     defer device.releaseTexture(depth_texture);
 
-    const model: Model = @import("./cube.zon");
+    const model: engine.Model = @import("./cube.zon");
     const mesh = try engine.Mesh.create(device, model.vertices, model.indices);
     defer mesh.release(device);
 

@@ -12,3 +12,5 @@ pub const parseAttributes = shorthands.parseAttributes;
 
 pub const types = @import("./engine/types.zig");
 pub const Vertex = types.Vertex;
+pub const Model = types.Model;
+pub const Material = types.Material;

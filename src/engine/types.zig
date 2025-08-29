@@ -6,7 +6,11 @@ pub const Vertex = struct {
     normal: zm.Vec3f = .{ 0, 0, 0 },
     texcoords: zm.Vec2f = .{ 0, 0 },
     color: zm.Vec4f = .{ 0, 0, 0, 0 },
-    tangent: zm.Vec3f = .{ 0, 0, 0 },
+};
+
+pub const Model = struct {
+    vertices: []const Vertex,
+    indices: []const u32,
 };
 
 pub const Material = struct {
