@@ -13,13 +13,13 @@ pub fn main() !void {
     try sdl3.init(.everything);
     defer sdl3.quit(.everything);
 
-    const window = try sdl3.video.Window.init("TotoEngine test", 960, 720, .{});
+    const window = try sdl3.video.Window.init("TotoEngine test", 960, 720, .{ .resizable = true });
     defer window.deinit();
     const device = try sdl3.gpu.Device.init(.{ .spirv = true }, true, "vulkan");
     defer device.deinit();
     try device.claimWindow(window);
 
-    const depth_texture = try device.createTexture(.{
+    var depth_texture = try device.createTexture(.{
         .format = .depth24_unorm_s8_uint,
         .width = 960,
         .height = 720,
@@ -60,8 +60,21 @@ pub fn main() !void {
         const dt = fps_capper.delay();
         _ = dt;
 
-        while (sdl3.events.poll()) |e|
-            switch (e) {
+        while (sdl3.events.poll()) |ev|
+            switch (ev) {
+                .window_resized => |e| {
+                    device.releaseTexture(depth_texture);
+                    depth_texture = try device.createTexture(.{
+                        .format = .depth24_unorm_s8_uint,
+                        .width = @intCast(e.width),
+                        .height = @intCast(e.height),
+                        .layer_count_or_depth = 1,
+                        .num_levels = 1,
+                        .sample_count = .no_multisampling,
+                        .texture_type = .two_dimensional,
+                        .usage = .{ .depth_stencil_target = true },
+                    });
+                },
                 .quit => running = false,
                 else => {},
             };
