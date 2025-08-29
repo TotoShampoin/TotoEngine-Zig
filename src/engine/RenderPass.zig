@@ -99,7 +99,7 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
     const vertex = try device.createShader(.{
         .stage = .vertex,
         .entry_point = "main",
-        .code = @embedFile("assets/shader.vert.spv"),
+        .code = @embedFile("shader_vert"),
         .format = .{ .spirv = true },
         .props = .{ .name = "Vertex shader" },
         .num_uniform_buffers = 1,
@@ -108,7 +108,7 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
     const fragment = try device.createShader(.{
         .stage = .fragment,
         .entry_point = "main",
-        .code = @embedFile("assets/shader.frag.spv"),
+        .code = @embedFile("shader_frag"),
         .format = .{ .spirv = true },
         .props = .{ .name = "Fragment shader" },
         .num_uniform_buffers = 1,

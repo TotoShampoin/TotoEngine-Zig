@@ -56,4 +56,24 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_mod_tests.step);
     test_step.dependOn(&run_exe_tests.step);
+
+    mod.addAnonymousImport(
+        "shader_vert",
+        .{ .root_source_file = compileShader(b, .vertex, "src/engine/assets/shader.vert", "src/engine/assets/shader.vert.spv") },
+    );
+    mod.addAnonymousImport(
+        "shader_frag",
+        .{ .root_source_file = compileShader(b, .fragment, "src/engine/assets/shader.frag", "src/engine/assets/shader.frag.spv") },
+    );
+}
+
+pub const ShaderStage = enum {
+    vertex,
+    fragment,
+};
+pub fn compileShader(b: *std.Build, comptime stage: ShaderStage, comptime input: [:0]const u8, comptime output: [:0]const u8) std.Build.LazyPath {
+    const command = b.addSystemCommand(&.{ "glslc", "-fshader-stage=" ++ @tagName(stage) });
+    command.addFileArg(b.path(input));
+    command.addArg("-o");
+    return command.addOutputFileArg(output);
 }
