@@ -1,0 +1,26 @@
+.{
+    .name = .TotoEngine_Zig,
+
+    .version = "0.0.0",
+
+    .fingerprint = 0xfc4dda894e23f499, // Changing this has security and trust implications.
+
+    .minimum_zig_version = "0.16.0-dev.65+ca2e17e0a",
+
+    .dependencies = .{
+        .sdl3 = .{
+            .url = "git+https://github.com/Gota7/zig-sdl3?ref=zig-master#b71eec49689b833aae44ee7835e4ae414be5ca12",
+            .hash = "sdl3-0.0.1-NmT1Q9eYIADHjf5RQhYK67Kmr9FLiY4PKvlDaTv9-NbA",
+        },
+        .zm = .{
+            .url = "git+https://github.com/griush/zm#b5d70485dfc78baa9251a06a844d860fd00e9bcf",
+            .hash = "zm-0.4.0-cLX-WdndAACqPRGqhCAsd65iTajgaVVwrXhoLUQFKTOt",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
