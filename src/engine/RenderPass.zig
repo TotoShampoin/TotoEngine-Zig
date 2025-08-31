@@ -112,6 +112,8 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
         .format = .{ .spirv = true },
         .props = .{ .name = "Fragment shader" },
         .num_uniform_buffers = 1,
+        .num_samplers = 1,
+        // .num_storage_textures = 1,
     });
     defer device.releaseShader(fragment);
 
@@ -134,7 +136,18 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
         },
         .target_info = .{
             .color_target_descriptions = &.{
-                .{ .format = device.getSwapchainTextureFormat(window) },
+                sdl3.gpu.ColorTargetDescription{
+                    .format = device.getSwapchainTextureFormat(window),
+                    .blend_state = .{
+                        .enable_blend = true,
+                        .source_color = .src_alpha,
+                        .destination_color = .one_minus_src_alpha,
+                        .color_blend = .add,
+                        .source_alpha = .one,
+                        .destination_alpha = .one_minus_src_alpha,
+                        .alpha_blend = .add,
+                    },
+                },
             },
             .depth_stencil_format = .depth24_unorm_s8_uint,
         },

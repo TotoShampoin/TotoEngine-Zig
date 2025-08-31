@@ -10,7 +10,24 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
 
         .imports = &.{
-            .{ .name = "sdl3", .module = b.dependency("sdl3", .{}).module("sdl3") },
+            .{ .name = "sdl3", .module = b.dependency("sdl3", .{
+                .target = target,
+                .optimize = optimize,
+                .ext_image = true,
+                .image_enable_bmp = true,
+                .image_enable_gif = true,
+                .image_enable_jpg = true,
+                .image_enable_lbm = true,
+                .image_enable_pcx = true,
+                .image_enable_png = true,
+                .image_enable_pnm = true,
+                .image_enable_qoi = true,
+                .image_enable_svg = true,
+                .image_enable_tga = true,
+                .image_enable_xcf = true,
+                .image_enable_xpm = true,
+                .image_enable_xv = true,
+            }).module("sdl3") },
             .{ .name = "zm", .module = b.dependency("zm", .{}).module("zm") },
         },
     });
@@ -56,6 +73,13 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_mod_tests.step);
     test_step.dependOn(&run_exe_tests.step);
+
+    const res_dir = b.path("res");
+    b.installDirectory(.{
+        .source_dir = res_dir,
+        .install_dir = .{ .custom = "bin/res" },
+        .install_subdir = "",
+    });
 
     mod.addAnonymousImport(
         "shader_vert",
