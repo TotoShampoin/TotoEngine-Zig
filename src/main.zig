@@ -8,12 +8,12 @@ pub fn main() !void {
     try sdl3.init(.everything);
     defer sdl3.quit(.everything);
 
-    // For the moment, zig's sdl3 can't seem to be able to load an image while the device is being used...
+    // For the moment, zig's sdl3 can't seem to be able to load an image, nor to convert it, while the device is being used...
     const surface = img: {
-        // const image = try sdl3.image.loadFile("res/image.png");
-        const image = try sdl3.image.loadFile("res/image_indexed.png");
-        errdefer image.deinit();
-        try image.flip(.{ .vertical = true });
+        const surface = try sdl3.image.loadFile("res/image_indexed.png");
+        defer surface.deinit();
+        try surface.flip(.{ .vertical = true });
+        const image = try surface.convertFormat(.array_rgba_32);
         break :img image;
     };
     defer surface.deinit();
@@ -113,14 +113,11 @@ pub fn main() !void {
 }
 
 pub fn createTextureAndSampler(device: sdl3.gpu.Device, surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.SamplerCreateInfo) !sdl3.gpu.TextureSamplerBinding {
-    const image = try surface.convertFormat(.array_rgba_32);
-    defer image.deinit();
-
-    const width: u32 = @intCast(image.getWidth());
-    const height: u32 = @intCast(image.getHeight());
-    const pitch: u32 = @intCast(image.getPitch());
-    const pixels = image.getPixels() orelse return error.NoPixels;
-    const format = image.getFormat() orelse return error.NoFormal;
+    const width: u32 = @intCast(surface.getWidth());
+    const height: u32 = @intCast(surface.getHeight());
+    const pitch: u32 = @intCast(surface.getPitch());
+    const pixels = surface.getPixels() orelse return error.NoPixels;
+    const format = surface.getFormat() orelse return error.NoFormal;
     const pixel_size: u32 = sdl3.pixels.Format.getBytesPerPixel(format);
 
     const texture = try device.createTexture(.{
