@@ -15,5 +15,5 @@ pub const Model = struct {
 
 pub const Material = struct {
     color: zm.Vec4f,
-    // texture: sdl3.gpu.TextureSamplerBinding,
+    texture: sdl3.gpu.TextureSamplerBinding,
 };
