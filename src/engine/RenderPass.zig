@@ -92,7 +92,6 @@ const TransformUniform = struct {
 
 pub fn draw(
     self: RenderPass,
-    // pipeline: sdl3.gpu.GraphicsPipeline,
     mesh: Mesh,
     material: types.Material,
     transform: Transform,
@@ -147,7 +146,6 @@ pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
         .props = .{ .name = "Fragment shader" },
         .num_uniform_buffers = 1,
         .num_samplers = 1,
-        // .num_storage_textures = 1,
     });
     defer device.releaseShader(fragment);
 
