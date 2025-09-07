@@ -1,6 +1,7 @@
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
+const Transform = @import("Transform.zig");
 const TextureSampler = @import("TextureSampler.zig");
 
 pub const Vertex = struct {
@@ -19,3 +20,12 @@ pub const Material = struct {
     color: zm.Vec4f,
     texture: TextureSampler,
 };
+
+pub const Light = struct {
+    color: zm.Vec4f = .{ 1, 1, 1, 1 },
+    intensity: f32 = 1,
+    type: LightType = .directional,
+    range: f32 = 1,
+};
+pub const LightType = enum { point, spot, directional };
+pub const LightTransform = struct { light: Light, transform: Transform };

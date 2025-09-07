@@ -31,6 +31,27 @@ pub fn mat3to4x3(m: zm.Mat3f) [12]f32 {
         m.data[6], m.data[7], m.data[8], 0.0,
     };
 }
+pub fn mat2ToVecs(m: zm.Mat2f) [2]zm.Vec2f {
+    return .{
+        .{ m.data[0], m.data[2] },
+        .{ m.data[1], m.data[3] },
+    };
+}
+pub fn mat3ToVecs(m: zm.Mat3f) [3]zm.Vec3f {
+    return .{
+        .{ m.data[0], m.data[3], m.data[6] },
+        .{ m.data[1], m.data[4], m.data[7] },
+        .{ m.data[2], m.data[5], m.data[8] },
+    };
+}
+pub fn mat4ToVecs(m: zm.Mat4f) [4]zm.Vec4f {
+    return .{
+        .{ m.data[0], m.data[4], m.data[8], m.data[12] },
+        .{ m.data[1], m.data[5], m.data[9], m.data[13] },
+        .{ m.data[2], m.data[6], m.data[10], m.data[14] },
+        .{ m.data[3], m.data[7], m.data[11], m.data[15] },
+    };
+}
 
 pub fn parseAttributes(comptime t: type, comptime slot: u32, comptime offset: u32) [@typeInfo(t).@"struct".fields.len]sdl3.gpu.VertexAttribute {
     const info = @typeInfo(t);
@@ -144,6 +165,11 @@ pub fn prepareSamplersForGpu(T: type, data: T) struct {
 fn prepareUniformsForGpuImpl(T: type, data: T, output: *std.ArrayList(u8)) void {
     const bytes = std.mem.toBytes;
     const info = @typeInfo(T);
+    const stride = getAlign(T);
+    if (stride > 0)
+        while (output.items.len % stride != 0) {
+            output.appendAssumeCapacity(0);
+        };
     switch (T) {
         @Vector(1, i32), [1]i32, i32 => output.appendSliceAssumeCapacity(&bytes(data)),
         @Vector(1, u32), [1]u32, u32 => output.appendSliceAssumeCapacity(&bytes(data)),
@@ -151,15 +177,15 @@ fn prepareUniformsForGpuImpl(T: type, data: T, output: *std.ArrayList(u8)) void 
         @Vector(2, i32), [2]i32 => output.appendSliceAssumeCapacity(&bytes(data)),
         @Vector(2, u32), [2]u32 => output.appendSliceAssumeCapacity(&bytes(data)),
         @Vector(2, f32), [2]f32 => output.appendSliceAssumeCapacity(&bytes(data)),
-        @Vector(3, i32), [3]i32 => output.appendSliceAssumeCapacity(&bytes([4]i32{ data[0], data[1], data[2], 0 })),
-        @Vector(3, u32), [3]u32 => output.appendSliceAssumeCapacity(&bytes([4]u32{ data[0], data[1], data[2], 0 })),
-        @Vector(3, f32), [3]f32 => output.appendSliceAssumeCapacity(&bytes([4]f32{ data[0], data[1], data[2], 0 })),
+        @Vector(3, i32), [3]i32 => output.appendSliceAssumeCapacity(&bytes([3]i32{ data[0], data[1], data[2] })),
+        @Vector(3, u32), [3]u32 => output.appendSliceAssumeCapacity(&bytes([3]u32{ data[0], data[1], data[2] })),
+        @Vector(3, f32), [3]f32 => output.appendSliceAssumeCapacity(&bytes([3]f32{ data[0], data[1], data[2] })),
         @Vector(4, i32), [4]i32 => output.appendSliceAssumeCapacity(&bytes(data)),
         @Vector(4, u32), [4]u32 => output.appendSliceAssumeCapacity(&bytes(data)),
         @Vector(4, f32), [4]f32 => output.appendSliceAssumeCapacity(&bytes(data)),
-        zm.Mat2f => output.appendSliceAssumeCapacity(&bytes(data.transpose().data)),
-        zm.Mat3f => output.appendSliceAssumeCapacity(&bytes(mat3to4x3(data.transpose()))),
-        zm.Mat4f => output.appendSliceAssumeCapacity(&bytes(data.transpose().data)),
+        zm.Mat2f => prepareUniformsForGpuImpl([2]zm.Vec2f, mat2ToVecs(data), output),
+        zm.Mat3f => prepareUniformsForGpuImpl([3]zm.Vec3f, mat3ToVecs(data), output),
+        zm.Mat4f => prepareUniformsForGpuImpl([4]zm.Vec4f, mat4ToVecs(data), output),
         TextureSampler, sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => {}, // Must be handled separately
         else => switch (info) {
             .@"enum" => output.appendSliceAssumeCapacity(&bytes(
@@ -173,10 +199,9 @@ fn prepareUniformsForGpuImpl(T: type, data: T, output: *std.ArrayList(u8)) void 
                     prepareUniformsForGpuImpl(f.type, @field(data, f.name), output);
                 }
             },
-
             .array => |t| {
                 for (data) |el| {
-                    try prepareUniformsForGpuImpl(t.child, el, output);
+                    prepareUniformsForGpuImpl(t.child, el, output);
                 }
             },
             else => {
@@ -185,4 +210,42 @@ fn prepareUniformsForGpuImpl(T: type, data: T, output: *std.ArrayList(u8)) void 
             },
         },
     }
+}
+
+fn getAlign(T: type) usize {
+    const info = @typeInfo(T);
+    return switch (T) {
+        @Vector(1, i32), [1]i32, i32 => 4,
+        @Vector(1, u32), [1]u32, u32 => 8,
+        @Vector(1, f32), [1]f32, f32 => 8,
+        @Vector(2, i32), [2]i32 => 8,
+        @Vector(2, u32), [2]u32 => 8,
+        @Vector(2, f32), [2]f32 => 8,
+        @Vector(3, i32), [3]i32 => 16,
+        @Vector(3, u32), [3]u32 => 16,
+        @Vector(3, f32), [3]f32 => 16,
+        @Vector(4, i32), [4]i32 => 16,
+        @Vector(4, u32), [4]u32 => 16,
+        @Vector(4, f32), [4]f32 => 16,
+        zm.Mat2f => 8,
+        zm.Mat3f => 16,
+        zm.Mat4f => 16,
+        TextureSampler, sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => 0,
+        else => switch (info) {
+            .@"enum" => 4,
+            .bool => 4,
+            .@"struct" => |t| val: {
+                var v: usize = 0;
+                inline for (t.fields) |f| {
+                    v = @max(v, getAlign(@FieldType(T, f.name)));
+                }
+                break :val v;
+            },
+            .array => |t| getAlign(t.child),
+            else => {
+                std.log.err("[prepareForGpu] info = {any}", info);
+                @panic("Not implemented");
+            },
+        },
+    };
 }

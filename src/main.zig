@@ -21,43 +21,51 @@ pub fn main() !void {
     defer placeholder_texture.deinit();
     try placeholder_texture.generateMipmaps();
 
-    const model: engine.Model = @import("./cube.zon");
+    // const model: engine.Model = @import("./shapes/cube.zon");
+    const model: engine.Model = @import("./shapes/sphere.zon");
     const mesh = try engine.Mesh.create(model.vertices, model.indices);
     defer mesh.release();
 
     // var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .{ .limited = 120 } };
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
 
+    const fov = 60.0;
     var camera = engine.Camera.createPerspective(.{
-        .fov = std.math.degreesToRadians(30.0),
+        .fov = std.math.degreesToRadians(fov),
         .aspect = 4.0 / 3.0,
         .near = 0.1,
         .far = 100.0,
     });
     const a = std.math.degreesToRadians(36);
     const z = std.math.degreesToRadians(45);
-    const r = 4;
+    const r = 5;
     camera.transform.translation = .{
         std.math.sin(z) * std.math.cos(a) * r,
         std.math.sin(a) * r,
         std.math.cos(z) * std.math.cos(a) * r,
     };
-    camera.transform.lookAt(zm.vec.zero(3, f32), zm.vec.up(f32));
+    camera.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
+
+    var light = engine.LightTransform{
+        .light = .{},
+        .transform = .{},
+    };
+    light.transform.translation = .{ -3, 3, 3 };
+    light.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
 
     var transform = engine.Transform{};
 
     var running = true;
     while (running) {
-        const t = @as(f32, @floatFromInt(fps_capper.elapsed_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
         const dt = fps_capper.delay();
-
         _ = dt;
+        const t = @as(f32, @floatFromInt(fps_capper.elapsed_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
 
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
                     camera.setPerspective(.{
-                        .fov = std.math.degreesToRadians(30.0),
+                        .fov = std.math.degreesToRadians(fov),
                         .aspect = @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
                         .near = 0.1,
                         .far = 100.0,
@@ -77,7 +85,7 @@ pub fn main() !void {
         render_pass.draw(mesh, .{
             .color = .{ 1, 1, 1, 1 },
             .texture = placeholder_texture,
-        }, transform, camera);
+        }, transform, camera, &.{ light, light });
 
         try render_pass.end();
     }
