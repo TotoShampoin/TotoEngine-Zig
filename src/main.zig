@@ -73,6 +73,12 @@ pub fn main() !void {
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
+                    camera.setPerspective(.{
+                        .fov = std.math.degreesToRadians(60.0),
+                        .aspect = @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
+                        .near = 0.1,
+                        .far = 100.0,
+                    });
                     device.releaseTexture(depth_texture);
                     depth_texture = try device.createTexture(.{
                         .format = .depth24_unorm_s8_uint,
