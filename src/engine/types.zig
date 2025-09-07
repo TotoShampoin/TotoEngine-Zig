@@ -1,6 +1,8 @@
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
+const TextureSampler = @import("TextureSampler.zig");
+
 pub const Vertex = struct {
     position: zm.Vec3f = .{ 0, 0, 0 },
     normal: zm.Vec3f = .{ 0, 0, 0 },
@@ -15,5 +17,5 @@ pub const Model = struct {
 
 pub const Material = struct {
     color: zm.Vec4f,
-    texture: sdl3.gpu.TextureSamplerBinding,
+    texture: TextureSampler,
 };

@@ -1,6 +1,7 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
+const _context = @import("_context.zig");
 const shorthands = @import("shorthands.zig");
 const types = @import("types.zig");
 
@@ -11,7 +12,9 @@ vertex_buffer: sdl3.gpu.Buffer,
 index_buffer: sdl3.gpu.Buffer,
 count: u32,
 
-pub fn create(vertices: []const Vertex, indices: []const u32, device: sdl3.gpu.Device) !Mesh {
+pub fn create(vertices: []const Vertex, indices: []const u32) !Mesh {
+    const c = _context.ctx orelse return error.NoInit;
+    const device = c.device;
     const vertex_buffer = try device.createBuffer(.{
         .size = @intCast(@sizeOf(Vertex) * vertices.len),
         .usage = .{ .vertex = true },
@@ -36,7 +39,9 @@ pub fn create(vertices: []const Vertex, indices: []const u32, device: sdl3.gpu.D
     };
 }
 
-pub fn release(self: Mesh, device: sdl3.gpu.Device) void {
+pub fn release(self: Mesh) void {
+    const c = _context.ctx orelse return;
+    const device = c.device;
     device.releaseBuffer(self.vertex_buffer);
     device.releaseBuffer(self.index_buffer);
 }

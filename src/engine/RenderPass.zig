@@ -2,6 +2,7 @@ const std = @import("std");
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
+const _context = @import("_context.zig");
 const types = @import("types.zig");
 const shorthands = @import("shorthands.zig");
 const Mesh = @import("Mesh.zig");
@@ -12,26 +13,41 @@ const RenderPass = @This();
 
 var swapchain_texture: ?sdl3.gpu.Texture = null;
 var depth_texture: ?sdl3.gpu.Texture = null;
+var pipeline: ?sdl3.gpu.GraphicsPipeline = null;
 
 command_buffer: sdl3.gpu.CommandBuffer,
 pass: sdl3.gpu.RenderPass,
 width: u32,
 height: u32,
 
-pub fn deinit(device: sdl3.gpu.Device) void {
+pub fn init() !void {
+    pipeline = try createPipeline();
+}
+pub fn deinit() void {
+    const c = _context.ctx orelse return;
+    const device = c.device;
     if (depth_texture) |t| device.releaseTexture(t);
+    if (pipeline) |p| device.releaseGraphicsPipeline(p);
 }
 
-pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, device: sdl3.gpu.Device) !?RenderPass {
+pub fn begin() !?RenderPass {
+    const c = _context.ctx orelse return error.NoInit;
+    const device = c.device;
+    const window = c.window;
+
+    const command_buffer = try device.acquireCommandBuffer();
     const swapchain = try command_buffer.waitAndAcquireSwapchainTexture(window);
-    if (swapchain.texture == null) return null;
+    if (swapchain.texture == null) {
+        try command_buffer.cancel();
+        return null;
+    }
     if (swapchain_texture == null or swapchain.texture.?.value != swapchain_texture.?.value) {
         if (depth_texture) |dt| {
             device.releaseTexture(dt);
             depth_texture = null;
         }
         swapchain_texture = swapchain.texture;
-        depth_texture = try createDepthTexture(device, window);
+        depth_texture = try createDepthTexture();
     }
 
     const pass = command_buffer.beginRenderPass(&.{
@@ -55,14 +71,14 @@ pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, 
     return .{
         .command_buffer = command_buffer,
         .pass = pass,
-        // .swapchain = swapchain.texture.?,
         .width = swapchain.width,
         .height = swapchain.height,
     };
 }
 
-pub fn end(self: RenderPass) void {
+pub fn end(self: RenderPass) !void {
     self.pass.end();
+    try self.command_buffer.submit();
 }
 
 const TransformUniform = struct {
@@ -76,7 +92,7 @@ const TransformUniform = struct {
 
 pub fn draw(
     self: RenderPass,
-    pipeline: sdl3.gpu.GraphicsPipeline,
+    // pipeline: sdl3.gpu.GraphicsPipeline,
     mesh: Mesh,
     material: types.Material,
     transform: Transform,
@@ -101,7 +117,7 @@ pub fn draw(
     const texture_sampler_bindings, const count = shorthands.prepareSamplersForGpu(types.Material, material);
     self.pass.bindFragmentSamplers(0, texture_sampler_bindings[0..count]);
 
-    self.pass.bindGraphicsPipeline(pipeline);
+    self.pass.bindGraphicsPipeline(pipeline.?);
     self.pass.bindVertexBuffers(0, &.{
         sdl3.gpu.BufferBinding{ .buffer = mesh.vertex_buffer, .offset = 0 },
     });
@@ -110,7 +126,10 @@ pub fn draw(
     self.pass.drawIndexedPrimitives(mesh.count, 1, 0, 0, 0);
 }
 
-pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.gpu.GraphicsPipeline {
+pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
+    const c = _context.ctx orelse return error.NoInit;
+    const device = c.device;
+    const window = c.window;
     const vertex = try device.createShader(.{
         .stage = .vertex,
         .entry_point = "main",
@@ -132,7 +151,7 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
     });
     defer device.releaseShader(fragment);
 
-    const pipeline = try device.createGraphicsPipeline(.{
+    const pip = try device.createGraphicsPipeline(.{
         .vertex_shader = vertex,
         .fragment_shader = fragment,
         .primitive_type = .triangle_list,
@@ -171,12 +190,15 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
         },
         .props = .{ .name = "Pipeline" },
     });
-    errdefer device.releaseGraphicsPipeline(pipeline);
+    errdefer device.releaseGraphicsPipeline(pip);
 
-    return pipeline;
+    return pip;
 }
 
-pub fn createDepthTexture(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.gpu.Texture {
+pub fn createDepthTexture() !sdl3.gpu.Texture {
+    const c = _context.ctx orelse return error.NoInit;
+    const device = c.device;
+    const window = c.window;
     const size = try window.getSize();
     return try device.createTexture(.{
         .format = .depth24_unorm_s8_uint,
