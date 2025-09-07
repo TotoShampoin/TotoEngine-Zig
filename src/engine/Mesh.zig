@@ -11,7 +11,7 @@ vertex_buffer: sdl3.gpu.Buffer,
 index_buffer: sdl3.gpu.Buffer,
 count: u32,
 
-pub fn create(device: sdl3.gpu.Device, vertices: []const Vertex, indices: []const u32) !Mesh {
+pub fn create(vertices: []const Vertex, indices: []const u32, device: sdl3.gpu.Device) !Mesh {
     const vertex_buffer = try device.createBuffer(.{
         .size = @intCast(@sizeOf(Vertex) * vertices.len),
         .usage = .{ .vertex = true },

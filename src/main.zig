@@ -15,31 +15,20 @@ pub fn main() !void {
 
     try device.claimWindow(window);
 
-    var depth_texture = try device.createTexture(.{
-        .format = .depth24_unorm_s8_uint,
-        .width = 960,
-        .height = 720,
-        .layer_count_or_depth = 1,
-        .num_levels = 1,
-        .sample_count = .no_multisampling,
-        .texture_type = .two_dimensional,
-        .usage = .{ .depth_stencil_target = true },
-    });
-    defer device.releaseTexture(depth_texture);
+    defer engine.RenderPass.deinit(device);
 
-    const placeholder_texture = try engine.TextureSampler.load(device, "res/image.png", .{
+    const placeholder_texture = try engine.TextureSampler.load("res/image.png", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,
         .mag_filter = .linear,
         .mipmap_mode = .linear,
-    });
-    // const placeholder_texture = try engine.TextureSampler.load(device, "res/image_indexed.png", .{});
+    }, device);
     defer placeholder_texture.deinit(device);
     try placeholder_texture.generateMipmaps(device);
 
     const model: engine.Model = @import("./cube.zon");
-    const mesh = try engine.Mesh.create(device, model.vertices, model.indices);
+    const mesh = try engine.Mesh.create(model.vertices, model.indices, device);
     defer mesh.release(device);
 
     const pipeline = try engine.RenderPass.createPipeline(device, window);
@@ -48,14 +37,14 @@ pub fn main() !void {
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .{ .limited = 120 } };
 
     var camera = engine.Camera.createPerspective(.{
-        .fov = std.math.degreesToRadians(60.0),
+        .fov = std.math.degreesToRadians(30.0),
         .aspect = 4.0 / 3.0,
         .near = 0.1,
         .far = 100.0,
     });
     const a = std.math.degreesToRadians(36);
     const z = std.math.degreesToRadians(45);
-    const r = 5;
+    const r = 4;
     camera.transform.translation = .{
         std.math.sin(z) * std.math.cos(a) * r,
         std.math.sin(a) * r,
@@ -68,27 +57,15 @@ pub fn main() !void {
     var running = true;
     while (running) {
         const dt = fps_capper.delay();
-        // _ = dt;
 
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
                     camera.setPerspective(.{
-                        .fov = std.math.degreesToRadians(60.0),
+                        .fov = std.math.degreesToRadians(30.0),
                         .aspect = @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
                         .near = 0.1,
                         .far = 100.0,
-                    });
-                    device.releaseTexture(depth_texture);
-                    depth_texture = try device.createTexture(.{
-                        .format = .depth24_unorm_s8_uint,
-                        .width = @intCast(e.width),
-                        .height = @intCast(e.height),
-                        .layer_count_or_depth = 1,
-                        .num_levels = 1,
-                        .sample_count = .no_multisampling,
-                        .texture_type = .two_dimensional,
-                        .usage = .{ .depth_stencil_target = true },
                     });
                 },
                 .quit => running = false,
@@ -98,7 +75,7 @@ pub fn main() !void {
         transform.rotation = transform.rotation.multiply(.fromAxisAngle(zm.vec.up(f32), dt));
 
         const command_buffer = try device.acquireCommandBuffer();
-        const render_pass = try engine.RenderPass.begin(command_buffer, window, depth_texture) orelse {
+        const render_pass = try engine.RenderPass.begin(command_buffer, window, device) orelse {
             try command_buffer.cancel();
             continue;
         };

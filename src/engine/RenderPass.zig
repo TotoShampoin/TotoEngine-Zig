@@ -1,3 +1,4 @@
+const std = @import("std");
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
@@ -9,15 +10,29 @@ const Camera = @import("Camera.zig");
 
 const RenderPass = @This();
 
+var swapchain_texture: ?sdl3.gpu.Texture = null;
+var depth_texture: ?sdl3.gpu.Texture = null;
+
 command_buffer: sdl3.gpu.CommandBuffer,
 pass: sdl3.gpu.RenderPass,
-swapchain: sdl3.gpu.Texture,
 width: u32,
 height: u32,
 
-pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, depth_texture: sdl3.gpu.Texture) !?RenderPass {
+pub fn deinit(device: sdl3.gpu.Device) void {
+    if (depth_texture) |t| device.releaseTexture(t);
+}
+
+pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, device: sdl3.gpu.Device) !?RenderPass {
     const swapchain = try command_buffer.waitAndAcquireSwapchainTexture(window);
     if (swapchain.texture == null) return null;
+    if (swapchain_texture == null or swapchain.texture.?.value != swapchain_texture.?.value) {
+        if (depth_texture) |dt| {
+            device.releaseTexture(dt);
+            depth_texture = null;
+        }
+        swapchain_texture = swapchain.texture;
+        depth_texture = try createDepthTexture(device, window);
+    }
 
     const pass = command_buffer.beginRenderPass(&.{
         sdl3.gpu.ColorTargetInfo{
@@ -27,7 +42,7 @@ pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, 
             .texture = swapchain.texture.?,
         },
     }, sdl3.gpu.DepthStencilTargetInfo{
-        .texture = depth_texture,
+        .texture = depth_texture.?,
         .clear_depth = 1.0,
         .clear_stencil = 0.0,
         .load = .clear,
@@ -40,7 +55,7 @@ pub fn begin(command_buffer: sdl3.gpu.CommandBuffer, window: sdl3.video.Window, 
     return .{
         .command_buffer = command_buffer,
         .pass = pass,
-        .swapchain = swapchain.texture.?,
+        // .swapchain = swapchain.texture.?,
         .width = swapchain.width,
         .height = swapchain.height,
     };
@@ -159,4 +174,18 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
     errdefer device.releaseGraphicsPipeline(pipeline);
 
     return pipeline;
+}
+
+pub fn createDepthTexture(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.gpu.Texture {
+    const size = try window.getSize();
+    return try device.createTexture(.{
+        .format = .depth24_unorm_s8_uint,
+        .width = @intCast(size.width),
+        .height = @intCast(size.height),
+        .layer_count_or_depth = 1,
+        .num_levels = 1,
+        .sample_count = .no_multisampling,
+        .texture_type = .two_dimensional,
+        .usage = .{ .depth_stencil_target = true },
+    });
 }
