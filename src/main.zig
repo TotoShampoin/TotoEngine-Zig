@@ -5,15 +5,12 @@ const sdl3 = engine.sdl3;
 const zm = engine.zm;
 
 pub fn main() !void {
-    try sdl3.init(.everything);
-    defer sdl3.quit(.everything);
+    try engine.init("TotoEngine test", 960, 720, .{ .resizable = true });
+    defer engine.deinit();
 
-    const window = try sdl3.video.Window.init("TotoEngine test", 960, 720, .{ .resizable = true });
-    defer window.deinit();
-    const device = try sdl3.gpu.Device.init(.{ .spirv = true }, true, "vulkan");
-    defer device.deinit();
-
-    try device.claimWindow(window);
+    const c = engine._context.ctx.?;
+    const device = c.device;
+    const window = c.window;
 
     defer engine.RenderPass.deinit(device);
 

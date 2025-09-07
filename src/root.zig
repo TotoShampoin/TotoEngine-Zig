@@ -15,3 +15,8 @@ pub const types = @import("./engine/types.zig");
 pub const Vertex = types.Vertex;
 pub const Model = types.Model;
 pub const Material = types.Material;
+
+pub const _context = @import("./engine/_context.zig");
+
+pub const init = _context.init;
+pub const deinit = _context.deinit;
