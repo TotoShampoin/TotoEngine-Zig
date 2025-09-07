@@ -8,16 +8,6 @@ pub fn main() !void {
     try sdl3.init(.everything);
     defer sdl3.quit(.everything);
 
-    // For the moment, zig's sdl3 can't seem to be able to load an image, nor to convert it, while the device is being used...
-    const surface = img: {
-        const surface = try sdl3.image.loadFile("res/image_indexed.png");
-        defer surface.deinit();
-        try surface.flip(.{ .vertical = true });
-        const image = try surface.convertFormat(.array_rgba_32);
-        break :img image;
-    };
-    defer surface.deinit();
-
     const window = try sdl3.video.Window.init("TotoEngine test", 960, 720, .{ .resizable = true });
     defer window.deinit();
     const device = try sdl3.gpu.Device.init(.{ .spirv = true }, true, "vulkan");
@@ -37,11 +27,16 @@ pub fn main() !void {
     });
     defer device.releaseTexture(depth_texture);
 
-    const placeholder_texture = try createTextureAndSampler(device, surface, .{});
-    defer {
-        device.releaseTexture(placeholder_texture.texture);
-        device.releaseSampler(placeholder_texture.sampler);
-    }
+    const placeholder_texture = try engine.TextureSampler.load(device, "res/image.png", .{
+        .address_mode_u = .clamp_to_edge,
+        .address_mode_v = .clamp_to_edge,
+        .min_filter = .linear,
+        .mag_filter = .linear,
+        .mipmap_mode = .linear,
+    });
+    // const placeholder_texture = try engine.TextureSampler.load(device, "res/image_indexed.png", .{});
+    defer placeholder_texture.deinit(device);
+    try placeholder_texture.generateMipmaps(device);
 
     const model: engine.Model = @import("./cube.zon");
     const mesh = try engine.Mesh.create(device, model.vertices, model.indices);
@@ -104,7 +99,7 @@ pub fn main() !void {
 
         render_pass.draw(pipeline, mesh, .{
             .color = .{ 1, 1, 1, 1 },
-            .texture = placeholder_texture,
+            .texture = placeholder_texture.toBinding(),
         }, transform, camera);
 
         render_pass.end();
@@ -112,59 +107,73 @@ pub fn main() !void {
     }
 }
 
-pub fn createTextureAndSampler(device: sdl3.gpu.Device, surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.SamplerCreateInfo) !sdl3.gpu.TextureSamplerBinding {
-    const width: u32 = @intCast(surface.getWidth());
-    const height: u32 = @intCast(surface.getHeight());
-    const pitch: u32 = @intCast(surface.getPitch());
-    const pixels = surface.getPixels() orelse return error.NoPixels;
-    const format = surface.getFormat() orelse return error.NoFormal;
-    const pixel_size: u32 = sdl3.pixels.Format.getBytesPerPixel(format);
+// pub fn loadTextureAndSampler(device: sdl3.gpu.Device, image_path: [:0]const u8, sampler_info: sdl3.gpu.SamplerCreateInfo) !sdl3.gpu.TextureSamplerBinding {
+//     const surface = try sdl3.image.loadFile(image_path);
+//     defer surface.deinit();
+//     try surface.flip(.{ .vertical = true });
+//     return try createTextureAndSampler(device, surface, sampler_info);
+// }
+// pub fn deinitTextureAndSampler(device: sdl3.gpu.Device, texture_sampler: sdl3.gpu.TextureSamplerBinding) void {
+//     device.releaseTexture(texture_sampler.texture);
+//     device.releaseSampler(texture_sampler.sampler);
+// }
 
-    const texture = try device.createTexture(.{
-        .format = .r8g8b8a8_unorm,
-        .width = width,
-        .height = height,
-        .layer_count_or_depth = 1,
-        .num_levels = 1,
-        .sample_count = .no_multisampling,
-        .texture_type = .two_dimensional,
-        .usage = .{ .sampler = true },
-    });
-    errdefer device.releaseTexture(texture);
+// pub fn createTextureAndSampler(device: sdl3.gpu.Device, image: sdl3.surface.Surface, sampler_info: sdl3.gpu.SamplerCreateInfo) !sdl3.gpu.TextureSamplerBinding {
+//     const surface = try image.convertFormat(.array_rgba_32);
+//     defer surface.deinit();
 
-    const transfer_buffer = try device.createTransferBuffer(.{
-        .size = height * pitch,
-        .usage = .upload,
-    });
-    defer device.releaseTransferBuffer(transfer_buffer);
+//     const width: u32 = @intCast(surface.getWidth());
+//     const height: u32 = @intCast(surface.getHeight());
+//     const pitch: u32 = @intCast(surface.getPitch());
+//     const pixels = surface.getPixels() orelse return error.NoPixels;
+//     const format = surface.getFormat() orelse return error.NoFormal;
+//     const pixel_size: u32 = sdl3.pixels.Format.getBytesPerPixel(format);
 
-    var buffer_map = try device.mapTransferBuffer(transfer_buffer, false);
-    for (pixels, buffer_map[0..]) |v, *d| d.* = v;
+//     const texture = try device.createTexture(.{
+//         .format = .r8g8b8a8_unorm,
+//         .width = width,
+//         .height = height,
+//         .layer_count_or_depth = 1,
+//         .num_levels = 1,
+//         .sample_count = .no_multisampling,
+//         .texture_type = .two_dimensional,
+//         .usage = .{ .sampler = true },
+//     });
+//     errdefer device.releaseTexture(texture);
 
-    device.unmapTransferBuffer(transfer_buffer);
+//     const transfer_buffer = try device.createTransferBuffer(.{
+//         .size = height * pitch,
+//         .usage = .upload,
+//     });
+//     defer device.releaseTransferBuffer(transfer_buffer);
 
-    const copy_command_buffer = try device.acquireCommandBuffer();
-    const copy_pass = copy_command_buffer.beginCopyPass();
-    copy_pass.uploadToTexture(.{
-        .transfer_buffer = transfer_buffer,
-        .offset = 0,
-        .pixels_per_row = pitch / pixel_size,
-        .rows_per_layer = height,
-    }, .{
-        .texture = texture,
-        .mip_level = 0,
-        .layer = 0,
-        .x = 0,
-        .y = 0,
-        .width = width,
-        .height = height,
-        .depth = 1,
-    }, false);
-    copy_pass.end();
-    try copy_command_buffer.submit();
+//     var buffer_map = try device.mapTransferBuffer(transfer_buffer, false);
+//     for (pixels, buffer_map[0..]) |v, *d| d.* = v;
 
-    const sampler = try device.createSampler(sampler_info);
-    errdefer device.releaseSampler(sampler);
+//     device.unmapTransferBuffer(transfer_buffer);
 
-    return .{ .texture = texture, .sampler = sampler };
-}
+//     const copy_command_buffer = try device.acquireCommandBuffer();
+//     const copy_pass = copy_command_buffer.beginCopyPass();
+//     copy_pass.uploadToTexture(.{
+//         .transfer_buffer = transfer_buffer,
+//         .offset = 0,
+//         .pixels_per_row = pitch / pixel_size,
+//         .rows_per_layer = height,
+//     }, .{
+//         .texture = texture,
+//         .mip_level = 0,
+//         .layer = 0,
+//         .x = 0,
+//         .y = 0,
+//         .width = width,
+//         .height = height,
+//         .depth = 1,
+//     }, false);
+//     copy_pass.end();
+//     try copy_command_buffer.submit();
+
+//     const sampler = try device.createSampler(sampler_info);
+//     errdefer device.releaseSampler(sampler);
+
+//     return .{ .texture = texture, .sampler = sampler };
+// }

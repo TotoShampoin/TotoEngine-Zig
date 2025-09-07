@@ -3,6 +3,7 @@ pub const zm = @import("zm");
 
 pub const Mesh = @import("./engine/Mesh.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
+pub const TextureSampler = @import("./engine/TextureSampler.zig");
 pub const Transform = @import("./engine/Transform.zig");
 pub const Camera = @import("./engine/Camera.zig");
 

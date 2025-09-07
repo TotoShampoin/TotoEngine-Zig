@@ -9,8 +9,8 @@
 
     .dependencies = .{
         .sdl3 = .{
-            .url = "git+https://github.com/Gota7/zig-sdl3?ref=zig-master#b71eec49689b833aae44ee7835e4ae414be5ca12",
-            .hash = "sdl3-0.0.1-NmT1Q9eYIADHjf5RQhYK67Kmr9FLiY4PKvlDaTv9-NbA",
+            .url = "git+https://github.com/Gota7/zig-sdl3#64f0398482b8668c4f927259ffb56e113606fb6a",
+            .hash = "sdl3-0.1.1-NmT1QwLtIACUhWb8EvjR1Br2IwHhC1w3hG2-8xtq8XM_",
         },
         .zm = .{
             .url = "git+https://github.com/griush/zm#b5d70485dfc78baa9251a06a844d860fd00e9bcf",

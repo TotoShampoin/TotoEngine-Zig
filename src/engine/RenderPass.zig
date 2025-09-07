@@ -137,7 +137,7 @@ pub fn createPipeline(device: sdl3.gpu.Device, window: sdl3.video.Window) !sdl3.
         .target_info = .{
             .color_target_descriptions = &.{
                 sdl3.gpu.ColorTargetDescription{
-                    .format = device.getSwapchainTextureFormat(window),
+                    .format = try device.getSwapchainTextureFormat(window),
                     .blend_state = .{
                         .enable_blend = true,
                         .source_color = .src_alpha,
