@@ -11,18 +11,19 @@ pub fn main() !void {
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
-    const placeholder_texture = try engine.TextureSampler.load("res/image.png", .{
+    const placeholder_texture = try engine.TextureSampler.load("res/1024px-Equirectangular-projection.jpg", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,
         .mag_filter = .linear,
         .mipmap_mode = .linear,
+        .max_anisotropy = 16,
     });
     defer placeholder_texture.deinit();
     try placeholder_texture.generateMipmaps();
 
     // const model: engine.Model = @import("./shapes/cube.zon");
-    const model: engine.Model = @import("./shapes/sphere.zon");
+    const model: engine.Model = @import("./shapes/sphere.zig").sphere();
     const mesh = try engine.Mesh.create(model.vertices, model.indices);
     defer mesh.release();
 
@@ -38,7 +39,7 @@ pub fn main() !void {
     });
     const a = std.math.degreesToRadians(36);
     const z = std.math.degreesToRadians(45);
-    const r = 5;
+    const r = 3;
     camera.transform.translation = .{
         std.math.sin(z) * std.math.cos(a) * r,
         std.math.sin(a) * r,
@@ -50,7 +51,7 @@ pub fn main() !void {
         .light = .{},
         .transform = .{},
     };
-    light.transform.translation = .{ -3, 3, 3 };
+    light.transform.translation = .{ 0, 3, 3 };
     light.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
 
     var transform = engine.Transform{};
@@ -58,8 +59,8 @@ pub fn main() !void {
     var running = true;
     while (running) {
         const dt = fps_capper.delay();
-        _ = dt;
-        const t = @as(f32, @floatFromInt(fps_capper.elapsed_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
+        // _ = dt;
+        // const t = @as(f32, @floatFromInt(fps_capper.elapsed_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
 
         while (sdl3.events.poll()) |ev|
             switch (ev) {
@@ -75,10 +76,8 @@ pub fn main() !void {
                 else => {},
             };
 
-        // transform.rotation = transform.rotation.multiply(.fromAxisAngle(zm.vec.up(f32), dt));
-        transform.rotation = zm.Quaternionf.fromAxisAngle(zm.vec.up(f32), t)
-            .multiply(.fromAxisAngle(zm.vec.right(f32), t))
-            .multiply(.fromAxisAngle(zm.vec.forward(f32), t));
+        transform.rotation = transform.rotation.multiply(.fromAxisAngle(zm.vec.up(f32), dt));
+        // transform.rotation = .fromEulerAngles(.{ t * 2 / 4.0, t * 3 / 4.0, t * 5 / 4.0 });
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 

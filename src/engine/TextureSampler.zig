@@ -43,7 +43,7 @@ pub fn fromSurface(surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.Sampler
         .width = width,
         .height = height,
         .layer_count_or_depth = 1,
-        .num_levels = std.math.log2_int(u32, @min(width, height)),
+        .num_levels = 1 + std.math.log2_int(u32, @min(width, height)),
         .sample_count = .no_multisampling,
         .texture_type = .two_dimensional,
         .usage = .{ .sampler = true, .color_target = true },
