@@ -11,7 +11,7 @@ pub fn main() !void {
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
-    const placeholder_texture = try engine.TextureSampler.load("res/1024px-Equirectangular-projection.jpg", .{
+    const placeholder_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,

@@ -37,9 +37,15 @@ pub fn load(image_path: [:0]const u8, sampler_info: sdl3.gpu.SamplerCreateInfo) 
 pub fn fromSurface(surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.SamplerCreateInfo) !TextureSampler {
     const width: u32 = @intCast(surface.getWidth());
     const height: u32 = @intCast(surface.getHeight());
+    const color_space = surface.getColorspace().?;
+    const gpu_format = switch (color_space) {
+        .srgb => sdl3.gpu.TextureFormat.r8g8b8a8_unorm_srgb,
+        .srgb_linear => sdl3.gpu.TextureFormat.r8g8b8a8_unorm,
+        else => unreachable,
+    };
 
     const self = try create(.{
-        .format = .r8g8b8a8_unorm,
+        .format = gpu_format,
         .width = width,
         .height = height,
         .layer_count_or_depth = 1,

@@ -25,7 +25,7 @@ pub fn init(
     errdefer device.deinit();
 
     try device.claimWindow(window);
-    try device.setSwapchainParameters(window, .sdr, .vsync);
+    try device.setSwapchainParameters(window, .sdr_linear, .vsync);
 
     ctx = @This(){
         .window = window,

@@ -75,5 +75,4 @@ void main()
     }
 
     FragColor.rgb *= result;
-
 }
