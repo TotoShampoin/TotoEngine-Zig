@@ -11,7 +11,7 @@ pub fn main() !void {
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
-    const placeholder_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
+    const earth_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,
@@ -19,13 +19,23 @@ pub fn main() !void {
         .mipmap_mode = .linear,
         .max_anisotropy = 16,
     });
-    defer placeholder_texture.deinit();
-    try placeholder_texture.generateMipmaps();
+    defer earth_texture.deinit();
+    try earth_texture.generateMipmaps();
 
-    // const model: engine.Model = @import("./shapes/cube.zon");
-    const model: engine.Model = @import("./shapes/sphere.zig").sphere();
-    const mesh = try engine.Mesh.create(model.vertices, model.indices);
-    defer mesh.release();
+    const moon_texture = try engine.TextureSampler.load("res/lroc_color_poles_2k.jpg", .{
+        .address_mode_u = .clamp_to_edge,
+        .address_mode_v = .clamp_to_edge,
+        .min_filter = .linear,
+        .mag_filter = .linear,
+        .mipmap_mode = .linear,
+        .max_anisotropy = 16,
+    });
+    defer moon_texture.deinit();
+    try moon_texture.generateMipmaps();
+
+    const sphere_model: engine.Model = @import("./shapes/sphere.zig").sphere();
+    const sphere_mesh = try engine.Mesh.create(sphere_model.vertices, sphere_model.indices);
+    defer sphere_mesh.release();
 
     // var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .{ .limited = 120 } };
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
@@ -39,7 +49,7 @@ pub fn main() !void {
     });
     const a = std.math.degreesToRadians(36);
     const z = std.math.degreesToRadians(45);
-    const r = 3;
+    const r = 4;
     camera.transform.translation = .{
         std.math.sin(z) * std.math.cos(a) * r,
         std.math.sin(a) * r,
@@ -54,7 +64,19 @@ pub fn main() !void {
     light.transform.translation = .{ 0, 3, 3 };
     light.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
 
-    var transform = engine.Transform{};
+    var buffer: [1]*engine.Transform = undefined;
+    var earth_transform = engine.Transform{
+        .children = .initBuffer(&buffer),
+    };
+    var moon_transform = engine.Transform{
+        .translation = .{ 0, 1, 1.5 },
+        .scaling = .{ 0.25, 0.25, 0.25 },
+        .parent = &earth_transform,
+    };
+    earth_transform.children.appendAssumeCapacity(&moon_transform);
+
+    const up = zm.vec.up(f32);
+    const axisAngle = zm.Quaternionf.fromAxisAngle;
 
     var running = true;
     while (running) {
@@ -76,15 +98,22 @@ pub fn main() !void {
                 else => {},
             };
 
-        transform.rotation = transform.rotation.multiply(.fromAxisAngle(zm.vec.up(f32), dt));
+        light.transform.rotation = axisAngle(up, -10 * dt).multiply(light.transform.rotation);
+        earth_transform.rotation = axisAngle(up, 1 * dt).multiply(earth_transform.rotation);
+        moon_transform.rotation = axisAngle(up, -2 * dt).multiply(moon_transform.rotation);
         // transform.rotation = .fromEulerAngles(.{ t * 2 / 4.0, t * 3 / 4.0, t * 5 / 4.0 });
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
-        render_pass.draw(mesh, .{
+        render_pass.draw(sphere_mesh, .{
             .color = .{ 1, 1, 1, 1 },
-            .texture = placeholder_texture,
-        }, transform, camera, &.{ light, light });
+            .texture = earth_texture,
+        }, earth_transform, camera, &.{ light, light });
+
+        render_pass.draw(sphere_mesh, .{
+            .color = .{ 1, 1, 1, 1 },
+            .texture = moon_texture,
+        }, moon_transform, camera, &.{ light, light });
 
         try render_pass.end();
     }

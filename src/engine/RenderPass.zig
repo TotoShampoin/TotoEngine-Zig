@@ -103,8 +103,8 @@ pub fn draw(
     camera: Camera,
     lights: []const types.LightTransform,
 ) void {
-    const model = transform.matrix();
-    const view = camera.transform.matrix().inverse();
+    const model = transform.worldMatrix();
+    const view = camera.transform.worldMatrix().inverse();
     const projection = camera.projection;
 
     const tu = TransformUniform{
@@ -122,7 +122,7 @@ pub fn draw(
     };
     for (lights, 0..) |l, i| {
         lu.lights[i] = l.light;
-        lu.matrices[i] = view.multiply(l.transform.matrix());
+        lu.matrices[i] = view.multiply(l.transform.worldMatrix());
     }
 
     const transform_buffer, const transform_buffer_size = shorthands.prepareUniformsForGpu(TransformUniform, tu);
