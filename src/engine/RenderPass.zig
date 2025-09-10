@@ -113,7 +113,7 @@ pub fn draw(
         .projection = projection,
         .mv = view.multiply(model),
         .mvp = projection.multiply(view).multiply(model),
-        .normal_matix = shorthands.mat4toMat3(view.multiply(model).inverse().transpose()),
+        .normal_matix = shorthands.mat4toMat3(model.inverse().transpose()),
     };
     var lu = LightUniform{
         .lights = undefined,
@@ -122,17 +122,20 @@ pub fn draw(
     };
     for (lights, 0..) |l, i| {
         lu.lights[i] = l.light;
-        lu.matrices[i] = view.multiply(l.transform.worldMatrix());
+        lu.matrices[i] = l.transform.worldMatrix();
     }
 
-    const transform_buffer, const transform_buffer_size = shorthands.prepareUniformsForGpu(TransformUniform, tu);
-    self.command_buffer.pushVertexUniformData(0, transform_buffer[0..transform_buffer_size]);
+    const transform_vbuffer, const transform_vsize = shorthands.prepareUniformsForGpu(TransformUniform, tu);
+    self.command_buffer.pushVertexUniformData(0, transform_vbuffer[0..transform_vsize]);
 
-    const material_buffer, const material_buffer_size = shorthands.prepareUniformsForGpu(types.Material, material);
-    self.command_buffer.pushFragmentUniformData(0, material_buffer[0..material_buffer_size]);
+    const transform_fbuffer, const transform_fsize = shorthands.prepareUniformsForGpu(zm.Vec3f, camera.transform.translation);
+    self.command_buffer.pushFragmentUniformData(0, transform_fbuffer[0..transform_fsize]);
 
     const light_buffer, const light_buffer_size = shorthands.prepareUniformsForGpu(LightUniform, lu);
     self.command_buffer.pushFragmentUniformData(1, light_buffer[0..light_buffer_size]);
+
+    const material_buffer, const material_buffer_size = shorthands.prepareUniformsForGpu(types.Material, material);
+    self.command_buffer.pushFragmentUniformData(2, material_buffer[0..material_buffer_size]);
 
     const texture_sampler_bindings, const texture_sampler_count = shorthands.prepareSamplersForGpu(types.Material, material);
     self.pass.bindFragmentSamplers(0, texture_sampler_bindings[0..texture_sampler_count]);
@@ -165,7 +168,7 @@ pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
         .code = @embedFile("shader_frag"),
         .format = .{ .spirv = true },
         .props = .{ .name = "Fragment shader" },
-        .num_uniform_buffers = 2,
+        .num_uniform_buffers = 3,
         .num_samplers = 1,
     });
     defer device.releaseShader(fragment);

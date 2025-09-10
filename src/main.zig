@@ -11,6 +11,21 @@ pub fn main() !void {
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
+    const white_texture = try engine.TextureSampler.create(.{
+        .width = 1,
+        .height = 1,
+        .format = .r8g8b8a8_unorm_srgb,
+        .layer_count_or_depth = 1,
+        .num_levels = 1,
+        .usage = .{ .sampler = true, .color_target = true },
+    }, .{});
+    defer white_texture.deinit();
+    {
+        const surface = try sdl3.surface.Surface.initFrom(1, 1, sdl3.pixels.Format.array_rgba_32, &.{ 255, 255, 255, 255 });
+        defer surface.deinit();
+        try white_texture.fillFromSurface(surface);
+    }
+
     const earth_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
@@ -98,22 +113,21 @@ pub fn main() !void {
                 else => {},
             };
 
-        light.transform.rotation = axisAngle(up, -10 * dt).multiply(light.transform.rotation);
+        light.transform.rotation = axisAngle(up, -3 * dt).multiply(light.transform.rotation);
         earth_transform.rotation = axisAngle(up, 1 * dt).multiply(earth_transform.rotation);
         moon_transform.rotation = axisAngle(up, -2 * dt).multiply(moon_transform.rotation);
-        // transform.rotation = .fromEulerAngles(.{ t * 2 / 4.0, t * 3 / 4.0, t * 5 / 4.0 });
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
         render_pass.draw(sphere_mesh, .{
             .color = .{ 1, 1, 1, 1 },
             .texture = earth_texture,
-        }, earth_transform, camera, &.{ light, light });
+        }, earth_transform, camera, &.{light});
 
         render_pass.draw(sphere_mesh, .{
             .color = .{ 1, 1, 1, 1 },
             .texture = moon_texture,
-        }, moon_transform, camera, &.{ light, light });
+        }, moon_transform, camera, &.{light});
 
         try render_pass.end();
     }

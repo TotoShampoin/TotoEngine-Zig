@@ -8,6 +8,7 @@ layout (location = 3) in vec4 a_color;
 layout (location = 0) out vec3 v_normal;
 layout (location = 1) out vec2 v_uv;
 layout (location = 2) out vec4 v_color;
+layout (location = 3) out vec3 v_worldpos;
 
 layout(std140, set = 1, binding = 0) uniform TransformBlock {
     mat4 u_model;
@@ -20,11 +21,10 @@ layout(std140, set = 1, binding = 0) uniform TransformBlock {
 
 void main()
 {
-    vec4 pos = u_mvp * vec4(a_position, 1.0f);
-    // vec4 pos = u_projection * u_view * u_model * vec4(a_position, 1.0f);
-
-    gl_Position = pos;
+    vec4 worldpos = u_model * vec4(a_position, 1.0f);
+    gl_Position = u_mvp * vec4(a_position, 1.0f);
     v_uv = a_texcoord;
     v_normal = normalize(mat3(u_normal_matrix) * a_normal);
     v_color = a_color;
+    v_worldpos = worldpos.xyz;
 }
