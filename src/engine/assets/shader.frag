@@ -17,7 +17,7 @@ layout (location = 3) in vec3 v_worldpos;
 
 layout (location = 0) out vec4 FragColor;
 
-layout(std140, set = 3, binding = 0) uniform TransformBlock {
+layout(std140, set = 3, binding = 0) uniform CameraBlock {
     vec3 u_camera_worldpos;
 };
 

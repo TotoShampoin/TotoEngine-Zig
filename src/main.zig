@@ -119,15 +119,18 @@ pub fn main() !void {
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
-        render_pass.draw(sphere_mesh, .{
+        render_pass.setCamera(camera);
+        render_pass.setLights(&.{light});
+
+        render_pass.drawNode(sphere_mesh, .{
             .color = .{ 1, 1, 1, 1 },
             .texture = earth_texture,
-        }, earth_transform, camera, &.{light});
+        }, earth_transform);
 
-        render_pass.draw(sphere_mesh, .{
+        render_pass.drawNode(sphere_mesh, .{
             .color = .{ 1, 1, 1, 1 },
             .texture = moon_texture,
-        }, moon_transform, camera, &.{light});
+        }, moon_transform);
 
         try render_pass.end();
     }

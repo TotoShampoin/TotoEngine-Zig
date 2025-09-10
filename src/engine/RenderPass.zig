@@ -81,40 +81,44 @@ pub fn end(self: RenderPass) !void {
     try self.command_buffer.submit();
 }
 
-const TransformUniform = struct {
-    model: zm.Mat4f,
+fn pushVertexUniform(self: RenderPass, T: type, data: T, slot: u32) void {
+    const buffer, const size = shorthands.prepareUniformsForGpu(T, data);
+    self.command_buffer.pushVertexUniformData(slot, buffer[0..size]);
+}
+fn pushFragmentUniform(self: RenderPass, T: type, data: T, slot: u32) void {
+    const buffer, const size = shorthands.prepareUniformsForGpu(T, data);
+    self.command_buffer.pushFragmentUniformData(slot, buffer[0..size]);
+}
+fn pushFragmentSamplers(self: RenderPass, T: type, data: T, slot: u32) void {
+    const bindings, const count = shorthands.prepareSamplersForGpu(T, data);
+    self.pass.bindFragmentSamplers(slot, bindings[0..count]);
+}
+
+const CameraUniform = struct {
     view: zm.Mat4f,
     projection: zm.Mat4f,
-    mv: zm.Mat4f,
-    mvp: zm.Mat4f,
-    normal_matix: zm.Mat3f,
+    vp: zm.Mat4f,
 };
+pub fn setCamera(self: RenderPass, camera: Camera) void {
+    const view = camera.transform.worldMatrix().inverse();
+    const projection = camera.projection;
+
+    const cu = CameraUniform{
+        .view = view,
+        .projection = projection,
+        .vp = projection.multiply(view),
+    };
+
+    self.pushVertexUniform(CameraUniform, cu, 0);
+    self.pushFragmentUniform(zm.Vec3f, camera.transform.translation, 0);
+}
+
 const LightUniform = struct {
     lights: [8]types.Light,
     matrices: [8]zm.Mat4f,
     light_count: i32,
 };
-
-pub fn draw(
-    self: RenderPass,
-    mesh: Mesh,
-    material: types.Material,
-    transform: Transform,
-    camera: Camera,
-    lights: []const types.LightTransform,
-) void {
-    const model = transform.worldMatrix();
-    const view = camera.transform.worldMatrix().inverse();
-    const projection = camera.projection;
-
-    const tu = TransformUniform{
-        .model = model,
-        .view = view,
-        .projection = projection,
-        .mv = view.multiply(model),
-        .mvp = projection.multiply(view).multiply(model),
-        .normal_matix = shorthands.mat4toMat3(model.inverse().transpose()),
-    };
+pub fn setLights(self: RenderPass, lights: []const types.LightTransform) void {
     var lu = LightUniform{
         .lights = undefined,
         .matrices = undefined,
@@ -125,28 +129,43 @@ pub fn draw(
         lu.matrices[i] = l.transform.worldMatrix();
     }
 
-    const transform_vbuffer, const transform_vsize = shorthands.prepareUniformsForGpu(TransformUniform, tu);
-    self.command_buffer.pushVertexUniformData(0, transform_vbuffer[0..transform_vsize]);
+    self.pushFragmentUniform(LightUniform, lu, 1);
+}
 
-    const transform_fbuffer, const transform_fsize = shorthands.prepareUniformsForGpu(zm.Vec3f, camera.transform.translation);
-    self.command_buffer.pushFragmentUniformData(0, transform_fbuffer[0..transform_fsize]);
+const TransformUniform = struct {
+    model: zm.Mat4f,
+    normal_matix: zm.Mat3f,
+};
+pub fn setTransform(self: RenderPass, transform: Transform) void {
+    const model = transform.worldMatrix();
+    const tu = TransformUniform{
+        .model = model,
+        .normal_matix = shorthands.mat4toMat3(model.inverse().transpose()),
+    };
 
-    const light_buffer, const light_buffer_size = shorthands.prepareUniformsForGpu(LightUniform, lu);
-    self.command_buffer.pushFragmentUniformData(1, light_buffer[0..light_buffer_size]);
+    self.pushVertexUniform(TransformUniform, tu, 1);
+}
+pub fn setMaterial(self: RenderPass, material: types.Material) void {
+    self.pushFragmentUniform(types.Material, material, 2);
+    self.pushFragmentSamplers(types.Material, material, 0);
+}
 
-    const material_buffer, const material_buffer_size = shorthands.prepareUniformsForGpu(types.Material, material);
-    self.command_buffer.pushFragmentUniformData(2, material_buffer[0..material_buffer_size]);
-
-    const texture_sampler_bindings, const texture_sampler_count = shorthands.prepareSamplersForGpu(types.Material, material);
-    self.pass.bindFragmentSamplers(0, texture_sampler_bindings[0..texture_sampler_count]);
-
+pub fn drawMesh(self: RenderPass, mesh: Mesh) void {
     self.pass.bindGraphicsPipeline(pipeline.?);
-    self.pass.bindVertexBuffers(0, &.{
-        sdl3.gpu.BufferBinding{ .buffer = mesh.vertex_buffer, .offset = 0 },
-    });
+    self.pass.bindVertexBuffers(0, &.{sdl3.gpu.BufferBinding{ .buffer = mesh.vertex_buffer, .offset = 0 }});
     self.pass.bindIndexBuffer(.{ .buffer = mesh.index_buffer, .offset = 0 }, .indices_32bit);
-
     self.pass.drawIndexedPrimitives(mesh.count, 1, 0, 0, 0);
+}
+
+pub fn drawNode(
+    self: RenderPass,
+    mesh: Mesh,
+    material: types.Material,
+    transform: Transform,
+) void {
+    self.setTransform(transform);
+    self.setMaterial(material);
+    self.drawMesh(mesh);
 }
 
 pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
@@ -159,7 +178,7 @@ pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
         .code = @embedFile("shader_vert"),
         .format = .{ .spirv = true },
         .props = .{ .name = "Vertex shader" },
-        .num_uniform_buffers = 1,
+        .num_uniform_buffers = 2,
     });
     defer device.releaseShader(vertex);
     const fragment = try device.createShader(.{
