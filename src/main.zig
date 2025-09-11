@@ -13,13 +13,16 @@ pub fn main() !void {
     try engine.init("TotoEngine test", 960, 720, .{ .resizable = true, .vulkan = true });
     defer engine.deinit();
 
+    const c = engine._context.ctx.?;
+    const device = c.device;
+
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
     // const white_texture = engine.defaults.white_texture;
     const black_texture = engine.defaults.black_texture;
 
-    const earth_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
+    const sampler = try device.createSampler(.{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,
@@ -27,30 +30,16 @@ pub fn main() !void {
         .mipmap_mode = .linear,
         .max_anisotropy = 16,
     });
-    defer earth_texture.deinit();
-    try earth_texture.generateMipmaps();
+    defer device.releaseSampler(sampler);
 
-    const earth_lights_texture = try engine.TextureSampler.load("res/earth_lights.jpg", .{
-        .address_mode_u = .clamp_to_edge,
-        .address_mode_v = .clamp_to_edge,
-        .min_filter = .linear,
-        .mag_filter = .linear,
-        .mipmap_mode = .linear,
-        .max_anisotropy = 16,
-    });
-    defer earth_lights_texture.deinit();
-    try earth_lights_texture.generateMipmaps();
+    const earth_texture = try engine.texture_loader.load("res/earth_noClouds.0330.jpg", true);
+    defer device.releaseTexture(earth_texture);
 
-    const moon_texture = try engine.TextureSampler.load("res/lroc_color_poles_2k.jpg", .{
-        .address_mode_u = .clamp_to_edge,
-        .address_mode_v = .clamp_to_edge,
-        .min_filter = .linear,
-        .mag_filter = .linear,
-        .mipmap_mode = .linear,
-        .max_anisotropy = 16,
-    });
-    defer moon_texture.deinit();
-    try moon_texture.generateMipmaps();
+    const earth_lights_texture = try engine.texture_loader.load("res/earth_lights.jpg", true);
+    defer device.releaseTexture(earth_lights_texture);
+
+    const moon_texture = try engine.texture_loader.load("res/lroc_color_poles_2k.jpg", true);
+    defer device.releaseTexture(moon_texture);
 
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
 
@@ -75,8 +64,14 @@ pub fn main() !void {
             .color = .{ 1, 1, 1, 1 },
             .specular = .{ 0, 0, 0, 0 },
             .shininess = 0,
-            .albedo = earth_texture,
-            .emissive = earth_lights_texture,
+            .albedo = .{
+                .texture = earth_texture,
+                .sampler = sampler,
+            },
+            .emissive = .{
+                .texture = earth_lights_texture,
+                .sampler = sampler,
+            },
         },
     }};
     var earth_children: [1]*engine.Node = undefined;
@@ -91,8 +86,14 @@ pub fn main() !void {
             .color = .{ 1, 1, 1, 1 },
             .specular = .{ 0.5, 0.5, 0.5, 1 },
             .shininess = 8,
-            .albedo = moon_texture,
-            .emissive = black_texture,
+            .albedo = .{
+                .texture = moon_texture,
+                .sampler = sampler,
+            },
+            .emissive = .{
+                .texture = black_texture,
+                .sampler = sampler,
+            },
         },
     }};
     var moon_node = engine.Node{

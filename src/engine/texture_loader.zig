@@ -3,38 +3,17 @@ const sdl3 = @import("sdl3");
 
 const _context = @import("./_context.zig");
 
-const TextureSampler = @This();
-
-texture: sdl3.gpu.Texture,
-sampler: sdl3.gpu.Sampler,
-
-pub fn create(texture_info: sdl3.gpu.TextureCreateInfo, sampler_info: sdl3.gpu.SamplerCreateInfo) !TextureSampler {
-    const c = _context.ctx orelse return error.NoInit;
-    const device = c.device;
-    const texture = try device.createTexture(texture_info);
-    errdefer device.releaseTexture(texture);
-
-    const sampler = try device.createSampler(sampler_info);
-    errdefer device.releaseSampler(sampler);
-
-    return .{ .texture = texture, .sampler = sampler };
-}
-
-pub fn deinit(self: TextureSampler) void {
-    const c = _context.ctx orelse return;
-    const device = c.device;
-    device.releaseTexture(self.texture);
-    device.releaseSampler(self.sampler);
-}
-
-pub fn load(image_path: [:0]const u8, sampler_info: sdl3.gpu.SamplerCreateInfo) !TextureSampler {
+pub fn load(image_path: [:0]const u8, with_mipmaps: bool) !sdl3.gpu.Texture {
     const surface = try sdl3.image.loadFile(image_path);
     defer surface.deinit();
     try surface.flip(.{ .vertical = true });
-    return try fromSurface(surface, sampler_info);
+    return try fromSurface(surface, with_mipmaps);
 }
 
-pub fn fromSurface(surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.SamplerCreateInfo) !TextureSampler {
+pub fn fromSurface(surface: sdl3.surface.Surface, with_mipmaps: bool) !sdl3.gpu.Texture {
+    const c = _context.ctx orelse return error.NoInit;
+    const device = c.device;
+
     const width: u32 = @intCast(surface.getWidth());
     const height: u32 = @intCast(surface.getHeight());
     const color_space = surface.getColorspace().?;
@@ -44,7 +23,7 @@ pub fn fromSurface(surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.Sampler
         else => unreachable,
     };
 
-    const self = try create(.{
+    const texture = try device.createTexture(.{
         .format = gpu_format,
         .width = width,
         .height = height,
@@ -53,14 +32,15 @@ pub fn fromSurface(surface: sdl3.surface.Surface, sampler_info: sdl3.gpu.Sampler
         .sample_count = .no_multisampling,
         .texture_type = .two_dimensional,
         .usage = .{ .sampler = true, .color_target = true },
-    }, sampler_info);
-    errdefer self.deinit();
+    });
+    errdefer device.releaseTexture(texture);
 
-    try fillFromSurface(self, surface);
-    return self;
+    try fillFromSurface(texture, surface, with_mipmaps);
+
+    return texture;
 }
 
-pub fn fillFromSurface(self: TextureSampler, surface: sdl3.surface.Surface) !void {
+pub fn fillFromSurface(texture: sdl3.gpu.Texture, surface: sdl3.surface.Surface, with_mipmaps: bool) !void {
     const c = _context.ctx orelse return error.NoInit;
     const device = c.device;
     const formatted_surface = try surface.convertFormat(.array_rgba_32);
@@ -92,7 +72,7 @@ pub fn fillFromSurface(self: TextureSampler, surface: sdl3.surface.Surface) !voi
         .pixels_per_row = pitch / pixel_size,
         .rows_per_layer = height,
     }, .{
-        .texture = self.texture,
+        .texture = texture,
         .mip_level = 0,
         .layer = 0,
         .x = 0,
@@ -103,24 +83,14 @@ pub fn fillFromSurface(self: TextureSampler, surface: sdl3.surface.Surface) !voi
     }, false);
     copy_pass.end();
     try copy_command_buffer.submit();
+
+    if (with_mipmaps) try generateMipmaps(texture);
 }
 
-pub fn generateMipmaps(self: TextureSampler) !void {
+pub fn generateMipmaps(texture: sdl3.gpu.Texture) !void {
     const c = _context.ctx orelse return error.NoInit;
     const device = c.device;
     const command_buffer = try device.acquireCommandBuffer();
-    command_buffer.generateMipmapsForTexture(self.texture);
+    command_buffer.generateMipmapsForTexture(texture);
     try command_buffer.submit();
-}
-
-pub fn setSampler(self: TextureSampler, sampler_info: sdl3.gpu.SamplerCreateInfo) !void {
-    const c = _context.ctx orelse return error.NoInit;
-    const device = c.device;
-    const sampler = try device.createSampler(sampler_info);
-    device.releaseSampler(self.sampler);
-    self.sampler = sampler;
-}
-
-pub inline fn toBinding(self: TextureSampler) sdl3.gpu.TextureSamplerBinding {
-    return .{ .texture = self.texture, .sampler = self.sampler };
 }

@@ -2,8 +2,6 @@ const std = @import("std");
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
-const TextureSampler = @import("TextureSampler.zig");
-
 pub fn mat4toMat3(m: zm.Mat4f) zm.Mat3f {
     return zm.Mat3f{
         .data = .{
@@ -147,10 +145,6 @@ pub fn prepareSamplersForGpu(T: type, data: T) struct {
     var textures: [info.@"struct".fields.len]sdl3.gpu.TextureSamplerBinding = undefined;
     inline for (info.@"struct".fields) |f| {
         switch (f.type) {
-            TextureSampler => {
-                textures[count] = @field(data, f.name).toBinding();
-                count += 1;
-            },
             sdl3.gpu.TextureSamplerBinding => {
                 textures[count] = @field(data, f.name);
                 count += 1;
@@ -186,7 +180,7 @@ fn prepareUniformsForGpuImpl(T: type, data: T, output: *std.ArrayList(u8)) void 
         zm.Mat2f => prepareUniformsForGpuImpl([2]zm.Vec2f, mat2ToVecs(data), output),
         zm.Mat3f => prepareUniformsForGpuImpl([3]zm.Vec3f, mat3ToVecs(data), output),
         zm.Mat4f => prepareUniformsForGpuImpl([4]zm.Vec4f, mat4ToVecs(data), output),
-        TextureSampler, sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => {}, // Must be handled separately
+        sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => {}, // Must be handled separately
         else => switch (info) {
             .@"enum" => output.appendSliceAssumeCapacity(&bytes(
                 @as(u32, @intCast(@intFromEnum(data))),
@@ -230,7 +224,7 @@ fn getAlign(T: type) usize {
         zm.Mat2f => 8,
         zm.Mat3f => 16,
         zm.Mat4f => 16,
-        TextureSampler, sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => 0,
+        sdl3.gpu.TextureSamplerBinding, sdl3.gpu.Texture, sdl3.gpu.Sampler => 0,
         else => switch (info) {
             .@"enum" => 4,
             .bool => 4,

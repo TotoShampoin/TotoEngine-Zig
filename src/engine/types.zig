@@ -3,7 +3,6 @@ const zm = @import("zm");
 
 const Geometry = @import("Geometry.zig");
 const Transform = @import("Transform.zig");
-const TextureSampler = @import("TextureSampler.zig");
 
 pub const Vertex = struct {
     position: zm.Vec3f = .{ 0, 0, 0 },
@@ -21,8 +20,8 @@ pub const Material = struct {
     color: zm.Vec4f,
     specular: zm.Vec4f,
     shininess: f32,
-    albedo: TextureSampler,
-    emissive: TextureSampler,
+    albedo: sdl3.gpu.TextureSamplerBinding,
+    emissive: sdl3.gpu.TextureSamplerBinding,
 };
 
 pub const Light = struct {
