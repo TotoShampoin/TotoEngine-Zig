@@ -19,6 +19,8 @@ pub const Model = struct {
 
 pub const Material = struct {
     color: zm.Vec4f,
+    specular: zm.Vec4f,
+    shininess: f32,
     albedo: TextureSampler,
     emissive: TextureSampler,
 };

@@ -56,7 +56,7 @@ pub fn main() !void {
     defer earth_texture.deinit();
     try earth_texture.generateMipmaps();
 
-    const earth_lights_texture = try engine.TextureSampler.load("res/earth_lights_lrg.jpg", .{
+    const earth_lights_texture = try engine.TextureSampler.load("res/earth_lights.jpg", .{
         .address_mode_u = .clamp_to_edge,
         .address_mode_v = .clamp_to_edge,
         .min_filter = .linear,
@@ -85,11 +85,11 @@ pub fn main() !void {
             .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
         } },
     };
-    camera_node.transform.translation = .{ 2.5, 2.5, 2.5 };
+    camera_node.transform.translation = .{ 2, 2, 2 };
     camera_node.transform.lookAt(zero, up);
 
     var sun_node = engine.Node{ .object = .{ .light = .{} } };
-    sun_node.transform.translation = .{ 4, 1, 0 };
+    sun_node.transform.translation = .{ -1, 2, 1 };
     sun_node.transform.lookAt(zero, up);
 
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
@@ -99,6 +99,8 @@ pub fn main() !void {
         .geometry = sphere_geometry,
         .material = .{
             .color = .{ 1, 1, 1, 1 },
+            .specular = .{ 0, 0, 0, 0 },
+            .shininess = 0,
             .albedo = earth_texture,
             .emissive = earth_lights_texture,
         },
@@ -114,6 +116,8 @@ pub fn main() !void {
         .geometry = sphere_geometry,
         .material = .{
             .color = .{ 1, 1, 1, 1 },
+            .specular = .{ 0.5, 0.5, 0.5, 1 },
+            .shininess = 8,
             .albedo = moon_texture,
             .emissive = black_texture,
         },
@@ -147,9 +151,8 @@ pub fn main() !void {
                 else => {},
             };
 
-        sun_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, -2 * dt).multiply(sun_node.transform.rotation);
-        earth_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, dt).multiply(earth_node.transform.rotation);
-        moon_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, dt).multiply(moon_node.transform.rotation);
+        earth_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, 0.1 * dt).multiply(earth_node.transform.rotation);
+        moon_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, 0.5 * dt).multiply(moon_node.transform.rotation);
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
