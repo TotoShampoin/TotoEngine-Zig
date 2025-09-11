@@ -60,11 +60,11 @@ pub fn main() !void {
         } },
     };
     camera_node.transform.translation = .{ 2, 2, 2 };
-    camera_node.transform.lookAt(zero, up);
+    camera_node.lookAtWorld(zero, up);
 
     var sun_node = engine.Node{ .object = .{ .light = .{} } };
     sun_node.transform.translation = .{ -1, 2, 1 };
-    sun_node.transform.lookAt(zero, up);
+    sun_node.lookAtWorld(zero, up);
 
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
     defer sphere_geometry.release();

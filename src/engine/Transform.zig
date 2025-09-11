@@ -13,8 +13,7 @@ pub fn matrix(self: Transform) zm.Mat4f {
         .multiply(zm.Mat4f.scaling(self.scaling[0], self.scaling[1], self.scaling[2]));
 }
 
-/// TODO: Make this work with world-space
-pub fn lookAt(self: *Transform, target: zm.Vec3f, up: zm.Vec3f) void {
+pub fn lookAtLocal(self: *Transform, target: zm.Vec3f, up: zm.Vec3f) void {
     self.rotation = zm.Quaternionf
         .fromMatrix4(zm.Mat4f.lookAt(self.translation, target, up))
         .inverse();
