@@ -5,7 +5,7 @@ const zm = @import("zm");
 const _context = @import("_context.zig");
 const types = @import("types.zig");
 const shorthands = @import("shorthands.zig");
-const Primitive = @import("Primitive.zig");
+const Geometry = @import("Geometry.zig");
 const Transform = @import("Transform.zig");
 
 const RenderPass = @This();
@@ -151,7 +151,7 @@ pub fn setMaterial(self: RenderPass, material: types.Material) void {
     self.pushFragmentSamplers(types.Material, material, 0);
 }
 
-pub fn draw(self: RenderPass, primitive: Primitive) void {
+pub fn draw(self: RenderPass, primitive: Geometry) void {
     self.pass.bindGraphicsPipeline(pipeline.?);
     self.pass.bindVertexBuffers(0, &.{sdl3.gpu.BufferBinding{ .buffer = primitive.vertex_buffer, .offset = 0 }});
     self.pass.bindIndexBuffer(.{ .buffer = primitive.index_buffer, .offset = 0 }, .indices_32bit);
@@ -178,7 +178,7 @@ pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
         .format = .{ .spirv = true },
         .props = .{ .name = "Fragment shader" },
         .num_uniform_buffers = 3,
-        .num_samplers = 1,
+        .num_samplers = 2,
     });
     defer device.releaseShader(fragment);
 

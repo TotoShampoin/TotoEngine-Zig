@@ -31,6 +31,7 @@ layout(std140, set = 3, binding = 2) uniform MaterialBlock {
     vec4 u_color;
 };
 layout(set = 2, binding = 0) uniform sampler2D u_tex;
+layout(set = 2, binding = 1) uniform sampler2D u_emi;
 
 void main()
 {
@@ -58,9 +59,6 @@ void main()
             continue; // skip unsupported types
         }
 
-        // Ambient
-        vec3 ambient = 0.1 * light.color.rgb * light.intensity;
-
         // Diffuse
         float diff = max(dot(norm, lightDir), 0.0);
         vec3 diffuse = diff * light.color.rgb * light.intensity;
@@ -70,8 +68,12 @@ void main()
         float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
         vec3 specular = spec * light.color.rgb * light.intensity * 0.5;
 
-        result += attenuation * (ambient + diffuse + specular);
+        result += attenuation * (diffuse + specular);
     }
+
+    // Emissive texture
+    vec3 emissive = texture(u_emi, v_uv).rgb * u_color.rgb;
+    result += emissive;
 
     FragColor = u_color * v_color * texture(u_tex, v_uv);
     FragColor.rgb *= result;

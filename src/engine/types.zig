@@ -1,7 +1,7 @@
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
-const Primitive = @import("Primitive.zig");
+const Geometry = @import("Geometry.zig");
 const Transform = @import("Transform.zig");
 const TextureSampler = @import("TextureSampler.zig");
 
@@ -19,7 +19,8 @@ pub const Model = struct {
 
 pub const Material = struct {
     color: zm.Vec4f,
-    texture: TextureSampler,
+    albedo: TextureSampler,
+    emissive: TextureSampler,
 };
 
 pub const Light = struct {
@@ -30,8 +31,8 @@ pub const Light = struct {
 };
 pub const LightType = enum { point, spot, directional };
 
-pub const Mesh = struct {
-    primitive: Primitive,
+pub const Primitive = struct {
+    geometry: Geometry,
     material: Material,
 };
 pub const Camera = struct {

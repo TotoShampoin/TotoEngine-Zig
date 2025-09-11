@@ -5,12 +5,12 @@ const Node = @This();
 
 const types = @import("types.zig");
 const Transform = @import("Transform.zig");
-const Mesh = types.Mesh;
+const Primitive = types.Primitive;
 const Camera = types.Camera;
 const Light = types.Light;
 
 pub const Object = union(enum) {
-    mesh: Mesh,
+    mesh: std.ArrayList(*Primitive),
     light: Light,
     camera: Camera,
 };

@@ -3,7 +3,7 @@ pub const zm = @import("zm");
 
 pub const Node = @import("./engine/Node.zig");
 
-pub const Primitive = @import("./engine/Primitive.zig");
+pub const Geometry = @import("./engine/Geometry.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
 pub const TextureSampler = @import("./engine/TextureSampler.zig");
 pub const Transform = @import("./engine/Transform.zig");
@@ -18,7 +18,7 @@ pub const Model = types.Model;
 pub const Material = types.Material;
 pub const Light = types.Light;
 
-pub const Mesh = types.Mesh;
+pub const Primitive = types.Primitive;
 pub const LightObject = types.LightObject;
 pub const Camera = types.Camera;
 
