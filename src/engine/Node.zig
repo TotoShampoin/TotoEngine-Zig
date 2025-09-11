@@ -10,7 +10,7 @@ const Camera = types.Camera;
 const Light = types.Light;
 
 pub const Object = union(enum) {
-    mesh: std.ArrayList(*Primitive),
+    mesh: std.ArrayList(Primitive),
     light: Light,
     camera: Camera,
 };

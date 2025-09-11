@@ -16,34 +16,8 @@ pub fn main() !void {
     try engine.RenderPass.init();
     defer engine.RenderPass.deinit();
 
-    const white_texture = try engine.TextureSampler.create(.{
-        .width = 1,
-        .height = 1,
-        .format = .r8g8b8a8_unorm_srgb,
-        .layer_count_or_depth = 1,
-        .num_levels = 1,
-        .usage = .{ .sampler = true, .color_target = true },
-    }, .{});
-    defer white_texture.deinit();
-    {
-        const surface = try sdl3.surface.Surface.initFrom(1, 1, sdl3.pixels.Format.array_rgba_32, &.{ 255, 255, 255, 255 });
-        defer surface.deinit();
-        try white_texture.fillFromSurface(surface);
-    }
-    const black_texture = try engine.TextureSampler.create(.{
-        .width = 1,
-        .height = 1,
-        .format = .r8g8b8a8_unorm_srgb,
-        .layer_count_or_depth = 1,
-        .num_levels = 1,
-        .usage = .{ .sampler = true, .color_target = true },
-    }, .{});
-    defer black_texture.deinit();
-    {
-        const surface = try sdl3.surface.Surface.initFrom(1, 1, sdl3.pixels.Format.array_rgba_32, &.{ 0, 0, 0, 255 });
-        defer surface.deinit();
-        try black_texture.fillFromSurface(surface);
-    }
+    // const white_texture = engine.defaults.white_texture;
+    const black_texture = engine.defaults.black_texture;
 
     const earth_texture = try engine.TextureSampler.load("res/earth_noClouds.0330.jpg", .{
         .address_mode_u = .clamp_to_edge,
@@ -95,7 +69,7 @@ pub fn main() !void {
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
     defer sphere_geometry.release();
 
-    var earth_primitive = engine.Primitive{
+    var earth_mesh = [_]engine.Primitive{.{
         .geometry = sphere_geometry,
         .material = .{
             .color = .{ 1, 1, 1, 1 },
@@ -104,15 +78,14 @@ pub fn main() !void {
             .albedo = earth_texture,
             .emissive = earth_lights_texture,
         },
-    };
-    var earth_mesh = [_]*engine.Primitive{&earth_primitive};
+    }};
     var earth_children: [1]*engine.Node = undefined;
     var earth_node = engine.Node{
         .object = .{ .mesh = .fromOwnedSlice(earth_mesh[0..]) },
         .children = .initBuffer(&earth_children),
     };
 
-    var moon_primitive = engine.Primitive{
+    var moon_mesh = [_]engine.Primitive{.{
         .geometry = sphere_geometry,
         .material = .{
             .color = .{ 1, 1, 1, 1 },
@@ -121,8 +94,7 @@ pub fn main() !void {
             .albedo = moon_texture,
             .emissive = black_texture,
         },
-    };
-    var moon_mesh = [_]*engine.Primitive{&moon_primitive};
+    }};
     var moon_node = engine.Node{
         .object = .{ .mesh = .fromOwnedSlice(moon_mesh[0..]) },
         .parent = &earth_node,
