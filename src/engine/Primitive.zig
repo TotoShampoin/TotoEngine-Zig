@@ -6,13 +6,13 @@ const shorthands = @import("shorthands.zig");
 const types = @import("types.zig");
 
 const Vertex = types.Vertex;
-const Mesh = @This();
+const Primitive = @This();
 
 vertex_buffer: sdl3.gpu.Buffer,
 index_buffer: sdl3.gpu.Buffer,
 count: u32,
 
-pub fn create(vertices: []const Vertex, indices: []const u32) !Mesh {
+pub fn create(vertices: []const Vertex, indices: []const u32) !Primitive {
     const c = _context.ctx orelse return error.NoInit;
     const device = c.device;
     const vertex_buffer = try device.createBuffer(.{
@@ -32,14 +32,14 @@ pub fn create(vertices: []const Vertex, indices: []const u32) !Mesh {
     try shorthands.uploadToBuffer(device, vertex_buffer, std.mem.sliceAsBytes(vertices));
     try shorthands.uploadToBuffer(device, index_buffer, std.mem.sliceAsBytes(indices));
 
-    return Mesh{
+    return Primitive{
         .vertex_buffer = vertex_buffer,
         .index_buffer = index_buffer,
         .count = @intCast(indices.len),
     };
 }
 
-pub fn release(self: Mesh) void {
+pub fn release(self: Primitive) void {
     const c = _context.ctx orelse return;
     const device = c.device;
     device.releaseBuffer(self.vertex_buffer);

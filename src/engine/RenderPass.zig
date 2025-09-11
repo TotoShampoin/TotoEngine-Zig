@@ -5,7 +5,7 @@ const zm = @import("zm");
 const _context = @import("_context.zig");
 const types = @import("types.zig");
 const shorthands = @import("shorthands.zig");
-const Mesh = @import("Mesh.zig");
+const Primitive = @import("Primitive.zig");
 const Transform = @import("Transform.zig");
 
 const RenderPass = @This();
@@ -149,17 +149,17 @@ pub fn setMaterial(self: RenderPass, material: types.Material) void {
     self.pushFragmentSamplers(types.Material, material, 0);
 }
 
-pub fn drawMesh(self: RenderPass, mesh: Mesh) void {
+pub fn drawPrimitive(self: RenderPass, primitive: Primitive) void {
     self.pass.bindGraphicsPipeline(pipeline.?);
-    self.pass.bindVertexBuffers(0, &.{sdl3.gpu.BufferBinding{ .buffer = mesh.vertex_buffer, .offset = 0 }});
-    self.pass.bindIndexBuffer(.{ .buffer = mesh.index_buffer, .offset = 0 }, .indices_32bit);
-    self.pass.drawIndexedPrimitives(mesh.count, 1, 0, 0, 0);
+    self.pass.bindVertexBuffers(0, &.{sdl3.gpu.BufferBinding{ .buffer = primitive.vertex_buffer, .offset = 0 }});
+    self.pass.bindIndexBuffer(.{ .buffer = primitive.index_buffer, .offset = 0 }, .indices_32bit);
+    self.pass.drawIndexedPrimitives(primitive.count, 1, 0, 0, 0);
 }
 
-pub fn renderMeshObject(self: RenderPass, object: types.MeshObject) void {
-    self.setTransform(object.transform);
-    self.setMaterial(object.material);
-    self.drawMesh(object.mesh);
+pub fn renderMesh(self: RenderPass, mesh: types.Mesh) void {
+    self.setTransform(mesh.transform);
+    self.setMaterial(mesh.material);
+    self.drawPrimitive(mesh.primitive);
 }
 
 pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {

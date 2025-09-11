@@ -49,7 +49,7 @@ pub fn main() !void {
     try moon_texture.generateMipmaps();
 
     const sphere_model: engine.Model = @import("./shapes/sphere.zig").sphere();
-    const sphere_mesh = try engine.Mesh.create(sphere_model.vertices, sphere_model.indices);
+    const sphere_mesh = try engine.Primitive.create(sphere_model.vertices, sphere_model.indices);
     defer sphere_mesh.release();
 
     // var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .{ .limited = 120 } };
@@ -124,8 +124,8 @@ pub fn main() !void {
         render_pass.setCamera(camera);
         render_pass.setLights(&.{light});
 
-        render_pass.renderMeshObject(.{
-            .mesh = sphere_mesh,
+        render_pass.renderMesh(.{
+            .primitive = sphere_mesh,
             .material = .{
                 .color = .{ 1, 1, 1, 1 },
                 .texture = earth_texture,
@@ -133,8 +133,8 @@ pub fn main() !void {
             .transform = earth_transform,
         });
 
-        render_pass.renderMeshObject(.{
-            .mesh = sphere_mesh,
+        render_pass.renderMesh(.{
+            .primitive = sphere_mesh,
             .material = .{
                 .color = .{ 1, 1, 1, 1 },
                 .texture = moon_texture,

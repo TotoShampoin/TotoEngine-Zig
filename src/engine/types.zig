@@ -1,7 +1,7 @@
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
-const Mesh = @import("Mesh.zig");
+const Primitive = @import("Primitive.zig");
 const Transform = @import("Transform.zig");
 const TextureSampler = @import("TextureSampler.zig");
 
@@ -30,8 +30,8 @@ pub const Light = struct {
 };
 pub const LightType = enum { point, spot, directional };
 
-pub const MeshObject = struct {
-    mesh: Mesh,
+pub const Mesh = struct {
+    primitive: Primitive,
     material: Material,
     transform: Transform = .{},
 };
