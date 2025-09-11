@@ -3,6 +3,7 @@ const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
 const _context = @import("_context.zig");
+const defaults = @import("defaults.zig");
 const types = @import("types.zig");
 const shorthands = @import("shorthands.zig");
 const Geometry = @import("Geometry.zig");
@@ -21,10 +22,12 @@ height: u32,
 
 pub fn init() !void {
     pipeline = try createPipeline();
+    try defaults.init();
 }
 pub fn deinit() void {
     const c = _context.ctx orelse return;
     const device = c.device;
+    defaults.deinit();
     if (depth_texture) |t| device.releaseTexture(t);
     if (pipeline) |p| device.releaseGraphicsPipeline(p);
 }

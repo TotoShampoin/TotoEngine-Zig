@@ -16,13 +16,13 @@ pub const types = @import("./engine/types.zig");
 pub const Vertex = types.Vertex;
 pub const Model = types.Model;
 pub const Material = types.Material;
-pub const Light = types.Light;
-
 pub const Primitive = types.Primitive;
-pub const LightObject = types.LightObject;
+pub const Light = types.Light;
 pub const Camera = types.Camera;
 
 pub const _context = @import("./engine/_context.zig");
+
+pub const defaults = @import("./engine/defaults.zig");
 
 pub const init = _context.init;
 pub const deinit = _context.deinit;
