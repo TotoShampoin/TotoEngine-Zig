@@ -1,6 +1,8 @@
 pub const sdl3 = @import("sdl3");
 pub const zm = @import("zm");
 
+pub const Node = @import("./engine/Node.zig");
+
 pub const Primitive = @import("./engine/Primitive.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
 pub const TextureSampler = @import("./engine/TextureSampler.zig");

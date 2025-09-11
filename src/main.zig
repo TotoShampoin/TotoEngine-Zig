@@ -4,6 +4,11 @@ const engine = @import("toto-engine");
 const sdl3 = engine.sdl3;
 const zm = engine.zm;
 
+const fov = 60.0;
+
+const zero = zm.vec.zero(3, f32);
+const up = zm.vec.up(f32);
+
 pub fn main() !void {
     try engine.init("TotoEngine test", 960, 720, .{ .resizable = true, .vulkan = true });
     defer engine.deinit();
@@ -48,63 +53,45 @@ pub fn main() !void {
     defer moon_texture.deinit();
     try moon_texture.generateMipmaps();
 
-    const sphere_model: engine.Model = @import("./shapes/sphere.zig").sphere();
-    const sphere_mesh = try engine.Primitive.create(sphere_model.vertices, sphere_model.indices);
-    defer sphere_mesh.release();
-
-    // var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .{ .limited = 120 } };
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
 
-    const fov = 60.0;
-    var camera = engine.Camera{
-        .projection = .perspective(
-            std.math.degreesToRadians(fov),
-            4.0 / 3.0,
-            0.1,
-            100.0,
-        ),
+    // var camera = engine.Camera{ .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0) };
+    var camera_node = engine.Node{
+        .object = .{ .camera = .{
+            .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
+        } },
     };
-    const a = std.math.degreesToRadians(36);
-    const z = std.math.degreesToRadians(45);
-    const r = 4;
-    camera.transform.translation = .{
-        std.math.sin(z) * std.math.cos(a) * r,
-        std.math.sin(a) * r,
-        std.math.cos(z) * std.math.cos(a) * r,
-    };
-    camera.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
+    camera_node.transform.translation = .{ 4, 4, 4 };
+    camera_node.transform.lookAt(zero, up);
 
-    var light = engine.LightObject{
-        .light = .{},
-        .transform = .{},
-    };
-    light.transform.translation = .{ 0, 3, 3 };
-    light.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
+    var sun_node = engine.Node{ .object = .{ .light = .{} } };
+    sun_node.transform.translation = .{ 4, 1, 0 };
+    sun_node.transform.lookAt(zero, up);
 
-    var buffer: [1]*engine.Transform = undefined;
-    var earth_transform = engine.Transform{
-        .children = .initBuffer(&buffer),
+    const sphere_primitive = prim: {
+        const sphere_model: engine.Model = @import("shapes/sphere.zig").sphere();
+        break :prim try engine.Primitive.create(sphere_model.vertices, sphere_model.indices);
     };
-    var moon_transform = engine.Transform{
-        .translation = .{ 0, 1, 1.5 },
-        .scaling = .{ 0.25, 0.25, 0.25 },
-        .parent = &earth_transform,
-    };
-    earth_transform.children.appendAssumeCapacity(&moon_transform);
+    defer sphere_primitive.release();
 
-    const up = zm.vec.up(f32);
-    const axisAngle = zm.Quaternionf.fromAxisAngle;
+    var earth_node = engine.Node{ .object = .{
+        .mesh = .{
+            .primitive = sphere_primitive,
+            .material = .{
+                .color = .{ 1, 1, 1, 1 },
+                .texture = earth_texture,
+            },
+        },
+    } };
 
     var running = true;
     while (running) {
         const dt = fps_capper.delay();
-        // _ = dt;
-        // const t = @as(f32, @floatFromInt(fps_capper.elapsed_ns)) / @as(f32, @floatFromInt(std.time.ns_per_s));
 
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
-                    camera.projection = .perspective(
+                    camera_node.object.?.camera.projection = .perspective(
                         std.math.degreesToRadians(fov),
                         @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
                         0.1,
@@ -115,32 +102,17 @@ pub fn main() !void {
                 else => {},
             };
 
-        light.transform.rotation = axisAngle(up, -3 * dt).multiply(light.transform.rotation);
-        earth_transform.rotation = axisAngle(up, 1 * dt).multiply(earth_transform.rotation);
-        moon_transform.rotation = axisAngle(up, -2 * dt).multiply(moon_transform.rotation);
+        sun_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, -2 * dt).multiply(sun_node.transform.rotation);
+        earth_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, dt).multiply(earth_node.transform.rotation);
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
-        render_pass.setCamera(camera);
-        render_pass.setLights(&.{light});
+        render_pass.setCamera(camera_node.object.?.camera, camera_node.worldMatrix());
+        render_pass.setLights(&.{sun_node.object.?.light}, &.{sun_node.worldMatrix()});
 
-        render_pass.renderMesh(.{
-            .primitive = sphere_mesh,
-            .material = .{
-                .color = .{ 1, 1, 1, 1 },
-                .texture = earth_texture,
-            },
-            .transform = earth_transform,
-        });
-
-        render_pass.renderMesh(.{
-            .primitive = sphere_mesh,
-            .material = .{
-                .color = .{ 1, 1, 1, 1 },
-                .texture = moon_texture,
-            },
-            .transform = moon_transform,
-        });
+        render_pass.setTransform(earth_node.worldMatrix());
+        render_pass.setMaterial(earth_node.object.?.mesh.material);
+        render_pass.draw(earth_node.object.?.mesh.primitive);
 
         try render_pass.end();
     }

@@ -98,9 +98,10 @@ const CameraUniform = struct {
     projection: zm.Mat4f,
     vp: zm.Mat4f,
 };
-pub fn setCamera(self: RenderPass, camera: types.Camera) void {
-    const view = camera.transform.worldMatrix().inverse();
+pub fn setCamera(self: RenderPass, camera: types.Camera, world_matrix: zm.Mat4f) void {
+    const view = world_matrix.inverse();
     const projection = camera.projection;
+    const position = zm.Vec3f{ world_matrix.data[3], world_matrix.data[7], world_matrix.data[11] };
 
     const cu = CameraUniform{
         .view = view,
@@ -109,7 +110,7 @@ pub fn setCamera(self: RenderPass, camera: types.Camera) void {
     };
 
     self.pushVertexUniform(CameraUniform, cu, 0);
-    self.pushFragmentUniform(zm.Vec3f, camera.transform.translation, 0);
+    self.pushFragmentUniform(zm.Vec3f, position, 0);
 }
 
 const LightUniform = struct {
@@ -117,15 +118,17 @@ const LightUniform = struct {
     matrices: [8]zm.Mat4f,
     light_count: i32,
 };
-pub fn setLights(self: RenderPass, lights: []const types.LightObject) void {
+pub fn setLights(self: RenderPass, lights: []const types.Light, world_matrices: []const zm.Mat4f) void {
+    std.debug.assert(lights.len == world_matrices.len);
+
     var lu = LightUniform{
         .lights = undefined,
         .matrices = undefined,
         .light_count = @intCast(lights.len),
     };
-    for (lights, 0..) |l, i| {
-        lu.lights[i] = l.light;
-        lu.matrices[i] = l.transform.worldMatrix();
+    for (lights, world_matrices, 0..) |l, m, i| {
+        lu.lights[i] = l;
+        lu.matrices[i] = m;
     }
 
     self.pushFragmentUniform(LightUniform, lu, 1);
@@ -135,8 +138,7 @@ const TransformUniform = struct {
     model: zm.Mat4f,
     normal_matix: zm.Mat3f,
 };
-pub fn setTransform(self: RenderPass, transform: Transform) void {
-    const model = transform.worldMatrix();
+pub fn setTransform(self: RenderPass, model: zm.Mat4f) void {
     const tu = TransformUniform{
         .model = model,
         .normal_matix = shorthands.mat4toMat3(model.inverse().transpose()),
@@ -149,17 +151,11 @@ pub fn setMaterial(self: RenderPass, material: types.Material) void {
     self.pushFragmentSamplers(types.Material, material, 0);
 }
 
-pub fn drawPrimitive(self: RenderPass, primitive: Primitive) void {
+pub fn draw(self: RenderPass, primitive: Primitive) void {
     self.pass.bindGraphicsPipeline(pipeline.?);
     self.pass.bindVertexBuffers(0, &.{sdl3.gpu.BufferBinding{ .buffer = primitive.vertex_buffer, .offset = 0 }});
     self.pass.bindIndexBuffer(.{ .buffer = primitive.index_buffer, .offset = 0 }, .indices_32bit);
     self.pass.drawIndexedPrimitives(primitive.count, 1, 0, 0, 0);
-}
-
-pub fn renderMesh(self: RenderPass, mesh: types.Mesh) void {
-    self.setTransform(mesh.transform);
-    self.setMaterial(mesh.material);
-    self.drawPrimitive(mesh.primitive);
 }
 
 pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {

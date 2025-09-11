@@ -33,13 +33,7 @@ pub const LightType = enum { point, spot, directional };
 pub const Mesh = struct {
     primitive: Primitive,
     material: Material,
-    transform: Transform = .{},
-};
-pub const LightObject = struct {
-    light: Light,
-    transform: Transform = .{},
 };
 pub const Camera = struct {
     projection: zm.Mat4f,
-    transform: Transform = .{},
 };
