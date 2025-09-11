@@ -5,7 +5,6 @@ pub const Mesh = @import("./engine/Mesh.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
 pub const TextureSampler = @import("./engine/TextureSampler.zig");
 pub const Transform = @import("./engine/Transform.zig");
-pub const Camera = @import("./engine/Camera.zig");
 
 pub const shorthands = @import("./engine/shorthands.zig");
 pub const uploadToBuffer = shorthands.uploadToBuffer;
@@ -16,7 +15,10 @@ pub const Vertex = types.Vertex;
 pub const Model = types.Model;
 pub const Material = types.Material;
 pub const Light = types.Light;
-pub const LightTransform = types.LightTransform;
+
+pub const MeshObject = types.MeshObject;
+pub const LightObject = types.LightObject;
+pub const Camera = types.Camera;
 
 pub const _context = @import("./engine/_context.zig");
 

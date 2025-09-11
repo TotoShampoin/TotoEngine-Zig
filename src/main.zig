@@ -56,12 +56,14 @@ pub fn main() !void {
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
 
     const fov = 60.0;
-    var camera = engine.Camera.createPerspective(.{
-        .fov = std.math.degreesToRadians(fov),
-        .aspect = 4.0 / 3.0,
-        .near = 0.1,
-        .far = 100.0,
-    });
+    var camera = engine.Camera{
+        .projection = .perspective(
+            std.math.degreesToRadians(fov),
+            4.0 / 3.0,
+            0.1,
+            100.0,
+        ),
+    };
     const a = std.math.degreesToRadians(36);
     const z = std.math.degreesToRadians(45);
     const r = 4;
@@ -72,7 +74,7 @@ pub fn main() !void {
     };
     camera.transform.lookAt(.{ 0, 0, 0 }, .{ 0, 1, 0 });
 
-    var light = engine.LightTransform{
+    var light = engine.LightObject{
         .light = .{},
         .transform = .{},
     };
@@ -102,12 +104,12 @@ pub fn main() !void {
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
-                    camera.setPerspective(.{
-                        .fov = std.math.degreesToRadians(fov),
-                        .aspect = @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
-                        .near = 0.1,
-                        .far = 100.0,
-                    });
+                    camera.projection = .perspective(
+                        std.math.degreesToRadians(fov),
+                        @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
+                        0.1,
+                        100.0,
+                    );
                 },
                 .quit => running = false,
                 else => {},
@@ -122,15 +124,23 @@ pub fn main() !void {
         render_pass.setCamera(camera);
         render_pass.setLights(&.{light});
 
-        render_pass.drawNode(sphere_mesh, .{
-            .color = .{ 1, 1, 1, 1 },
-            .texture = earth_texture,
-        }, earth_transform);
+        render_pass.renderMeshObject(.{
+            .mesh = sphere_mesh,
+            .material = .{
+                .color = .{ 1, 1, 1, 1 },
+                .texture = earth_texture,
+            },
+            .transform = earth_transform,
+        });
 
-        render_pass.drawNode(sphere_mesh, .{
-            .color = .{ 1, 1, 1, 1 },
-            .texture = moon_texture,
-        }, moon_transform);
+        render_pass.renderMeshObject(.{
+            .mesh = sphere_mesh,
+            .material = .{
+                .color = .{ 1, 1, 1, 1 },
+                .texture = moon_texture,
+            },
+            .transform = moon_transform,
+        });
 
         try render_pass.end();
     }

@@ -1,6 +1,7 @@
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
+const Mesh = @import("Mesh.zig");
 const Transform = @import("Transform.zig");
 const TextureSampler = @import("TextureSampler.zig");
 
@@ -28,4 +29,17 @@ pub const Light = struct {
     range: f32 = 1,
 };
 pub const LightType = enum { point, spot, directional };
-pub const LightTransform = struct { light: Light, transform: Transform };
+
+pub const MeshObject = struct {
+    mesh: Mesh,
+    material: Material,
+    transform: Transform = .{},
+};
+pub const LightObject = struct {
+    light: Light,
+    transform: Transform = .{},
+};
+pub const Camera = struct {
+    projection: zm.Mat4f,
+    transform: Transform = .{},
+};

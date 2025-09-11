@@ -7,7 +7,6 @@ const types = @import("types.zig");
 const shorthands = @import("shorthands.zig");
 const Mesh = @import("Mesh.zig");
 const Transform = @import("Transform.zig");
-const Camera = @import("Camera.zig");
 
 const RenderPass = @This();
 
@@ -99,7 +98,7 @@ const CameraUniform = struct {
     projection: zm.Mat4f,
     vp: zm.Mat4f,
 };
-pub fn setCamera(self: RenderPass, camera: Camera) void {
+pub fn setCamera(self: RenderPass, camera: types.Camera) void {
     const view = camera.transform.worldMatrix().inverse();
     const projection = camera.projection;
 
@@ -118,7 +117,7 @@ const LightUniform = struct {
     matrices: [8]zm.Mat4f,
     light_count: i32,
 };
-pub fn setLights(self: RenderPass, lights: []const types.LightTransform) void {
+pub fn setLights(self: RenderPass, lights: []const types.LightObject) void {
     var lu = LightUniform{
         .lights = undefined,
         .matrices = undefined,
@@ -157,15 +156,10 @@ pub fn drawMesh(self: RenderPass, mesh: Mesh) void {
     self.pass.drawIndexedPrimitives(mesh.count, 1, 0, 0, 0);
 }
 
-pub fn drawNode(
-    self: RenderPass,
-    mesh: Mesh,
-    material: types.Material,
-    transform: Transform,
-) void {
-    self.setTransform(transform);
-    self.setMaterial(material);
-    self.drawMesh(mesh);
+pub fn renderMeshObject(self: RenderPass, object: types.MeshObject) void {
+    self.setTransform(object.transform);
+    self.setMaterial(object.material);
+    self.drawMesh(object.mesh);
 }
 
 pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
