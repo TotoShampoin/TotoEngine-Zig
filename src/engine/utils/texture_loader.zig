@@ -1,7 +1,7 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
-const _context = @import("./utils/_context.zig");
+const _context = @import("_context.zig");
 
 pub fn load(image_path: [:0]const u8, with_mipmaps: bool) !sdl3.gpu.Texture {
     const surface = try sdl3.image.loadFile(image_path);

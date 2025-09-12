@@ -1,9 +1,9 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
-const defaults = @import("utils/defaults.zig");
+const defaults = @import("defaults.zig");
 
-const RenderPass = @import("./RenderPass.zig");
+const RenderPass = @import("../RenderPass.zig");
 
 window: sdl3.video.Window,
 device: sdl3.gpu.Device,

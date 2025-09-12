@@ -1,5 +1,5 @@
 pub const zm = @import("zm");
-pub const types = @import("types.zig");
+pub const types = @import("../types.zig");
 
 pub fn calculateNormals(vertices: []types.Vertex, indices: []u32) void {
     // Zero out all normals

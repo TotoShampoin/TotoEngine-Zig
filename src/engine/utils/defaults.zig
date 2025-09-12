@@ -1,7 +1,7 @@
 pub const sdl3 = @import("sdl3");
 
-const _context = @import("utils/_context.zig");
-const texture_loader = @import("utils/texture_loader.zig");
+const _context = @import("_context.zig");
+const texture_loader = @import("texture_loader.zig");
 
 pub var white_texture: sdl3.gpu.Texture = undefined;
 pub var black_texture: sdl3.gpu.Texture = undefined;
