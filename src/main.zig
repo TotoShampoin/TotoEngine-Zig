@@ -50,11 +50,11 @@ pub fn main() !void {
     var camera = engine.Camera{
         .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
     };
-    var camera_transform = engine.Transform{ .translation = .{ 0, 2, 2 } };
+    var camera_transform = engine.Transform{ .translation = .{ 2, 2, 2 } };
     camera_transform.lookAtLocal(zero, up);
 
     const sun = engine.Light{ .type = .directional };
-    var sun_transform = engine.Transform{ .translation = .{ -1, 2, -1 } };
+    var sun_transform = engine.Transform{ .translation = .{ -2, 2, 2 } };
     sun_transform.lookAtLocal(zero, up);
 
     var earth_node: engine.Node = undefined;
@@ -71,50 +71,54 @@ pub fn main() !void {
             .translation = .{ 1.5, 0, 0 },
         },
     };
-
-    const earth_material = engine.Material{
-        .color = .{ 1, 1, 1, 1 },
-        .specular = .{ 0, 0, 0, 0 },
-        .shininess = 1,
-        .normal_strength = 0,
-        .albedo = .{
-            .texture = earth_texture,
-            .sampler = sampler,
+    earth_node = engine.Node{
+        .object = .{
+            .mesh = &.{.{
+                .geometry = &sphere_geometry,
+                .material = &.{
+                    .color = .{ 1, 1, 1, 1 },
+                    .specular = .{ 0, 0, 0, 0 },
+                    .shininess = 1,
+                    .normal_strength = 0,
+                    .albedo = .{
+                        .texture = earth_texture,
+                        .sampler = sampler,
+                    },
+                    .emissive = .{
+                        .texture = earth_lights_texture,
+                        .sampler = sampler,
+                    },
+                    .normal = .{
+                        .texture = engine.defaults.normal_texture,
+                        .sampler = sampler,
+                    },
+                },
+            }},
         },
-        .emissive = .{
-            .texture = earth_lights_texture,
-            .sampler = sampler,
-        },
-        .normal = .{
-            .texture = engine.defaults.normal_texture,
-            .sampler = sampler,
-        },
+        .children = &.{&moon_node},
     };
-    const moon_material = engine.Material{
-        .color = .{ 1, 1, 1, 1 },
-        .specular = .{ 0.5, 0.5, 0.5, 1 },
-        .shininess = 8,
-        .normal_strength = 0.25,
-        .albedo = .{
-            .texture = moon_texture,
-            .sampler = sampler,
-        },
-        .emissive = .{
-            .texture = black_texture,
-            .sampler = sampler,
-        },
-        .normal = .{
-            .texture = moon_normal_texture,
-            .sampler = sampler,
-        },
-    };
-
     moon_node = engine.Node{
         .object = .{
             .mesh = &.{.{
                 .geometry = &sphere_geometry,
-                .material = &earth_material,
-                // .material = &moon_material,
+                .material = &.{
+                    .color = .{ 1, 1, 1, 1 },
+                    .specular = .{ 0.5, 0.5, 0.5, 1 },
+                    .shininess = 8,
+                    .normal_strength = 0.25,
+                    .albedo = .{
+                        .texture = moon_texture,
+                        .sampler = sampler,
+                    },
+                    .emissive = .{
+                        .texture = black_texture,
+                        .sampler = sampler,
+                    },
+                    .normal = .{
+                        .texture = moon_normal_texture,
+                        .sampler = sampler,
+                    },
+                },
             }},
         },
         .parent = &earth_node,
@@ -123,17 +127,6 @@ pub fn main() !void {
             .translation = .{ 2, 0, 0 },
             .scaling = .{ 0.25, 0.25, 0.25 },
         },
-    };
-
-    earth_node = engine.Node{
-        .object = .{
-            .mesh = &.{.{
-                .geometry = &sphere_geometry,
-                .material = &moon_material,
-                // .material = &earth_material,
-            }},
-        },
-        .children = &.{&moon_node},
     };
 
     var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
@@ -168,15 +161,15 @@ pub fn main() !void {
         );
 
         render_pass.setTransform(earth_node.worldMatrix());
-        for (earth_node.object.?.mesh) |primitive| {
+        if (earth_node.asMesh()) |m| for (m) |primitive| {
             render_pass.setMaterial(primitive.material.*);
             render_pass.draw(primitive.geometry.*);
-        }
+        };
         render_pass.setTransform(moon_node.worldMatrix());
-        for (moon_node.object.?.mesh) |primitive| {
+        if (moon_node.asMesh()) |m| for (m) |primitive| {
             render_pass.setMaterial(primitive.material.*);
             render_pass.draw(primitive.geometry.*);
-        }
+        };
 
         try render_pass.end();
     }

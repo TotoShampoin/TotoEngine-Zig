@@ -35,3 +35,24 @@ pub fn lookAtWorld(self: *Node, world_target: zm.Vec3f, up: zm.Vec3f) void {
     const rotation_matrix = zm.Mat4f.lookAt(self.transform.translation, node_space_target, up);
     self.transform.rotation = zm.Quaternionf.fromMatrix4(rotation_matrix).inverse();
 }
+
+pub inline fn asMesh(self: Node) ?[]const Primitive {
+    return if (self.object) |o| switch (o) {
+        .mesh => |m| m,
+        else => null,
+    } else null;
+}
+
+pub inline fn asLight(self: Node) ?*const Light {
+    return if (self.object) |o| switch (o) {
+        .light => |l| l,
+        else => null,
+    } else null;
+}
+
+pub inline fn asCamera(self: Node) ?*const Camera {
+    return if (self.object) |o| switch (o) {
+        .camera => |c| c,
+        else => null,
+    } else null;
+}

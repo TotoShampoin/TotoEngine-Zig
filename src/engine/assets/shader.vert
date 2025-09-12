@@ -9,8 +9,6 @@ layout (location = 4) in vec4 a_color;
 layout (location = 0) out vec2 v_uv;
 layout (location = 1) out vec4 v_color;
 layout (location = 2) out vec3 v_worldpos;
-// layout (location = 3) out vec3 v_normal;
-// layout (location = 4) out vec3 v_tangent;
 layout (location = 3) out mat3 v_tbn;
 
 layout(std140, set = 1, binding = 0) uniform CameraBlock {

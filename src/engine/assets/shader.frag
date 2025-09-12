@@ -13,8 +13,6 @@ struct Light {
 layout (location = 0) in vec2 v_uv;
 layout (location = 1) in vec4 v_color;
 layout (location = 2) in vec3 v_worldpos;
-// layout (location = 3) in vec3 v_normal;
-// layout (location = 4) in vec3 v_tangent;
 layout (location = 3) in mat3 v_tbn;
 
 layout (location = 0) out vec4 FragColor;
@@ -95,18 +93,9 @@ void main()
     // Emissive
     emissive = texture(u_emi, v_uv).rgb;
 
-    // Fresnel effect (Schlick's approximation)
-    float fresnelFactor = pow(1.0 - max(dot(norm, viewDir), 0.0), 5.0);
-
-    vec3 finalColor = (texColor.rgb * u_color.rgb * diffuse) + (specular * u_specular.rgb) + emissive + (texColor.rgb * fresnelFactor);
+    vec3 finalColor = vec3(0);
+    finalColor += texColor.rgb * u_color.rgb * diffuse;
+    finalColor += specular * u_specular.rgb;
+    finalColor += emissive;
     FragColor = vec4(finalColor, texColor.a * u_color.a);
-    
-    // FragColor = vec4(specular, 1.0);
-
-    // if(all(equal(specular, vec3(0)))) {
-    //     FragColor.rgb = vec3(1,0,0);
-    // }
-
-    // FragColor.rgb = norm;
-
 }
