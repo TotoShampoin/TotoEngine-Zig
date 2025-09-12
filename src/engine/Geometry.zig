@@ -1,8 +1,8 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
-const _context = @import("_context.zig");
-const shorthands = @import("shorthands.zig");
+const _context = @import("utils/_context.zig");
+const shorthands = @import("utils/shorthands.zig");
 const types = @import("types.zig");
 
 const Vertex = types.Vertex;

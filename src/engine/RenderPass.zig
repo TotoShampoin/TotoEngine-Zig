@@ -2,10 +2,10 @@ const std = @import("std");
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
-const _context = @import("_context.zig");
+const _context = @import("utils/_context.zig");
 const types = @import("types.zig");
-const math_utils = @import("math_utils.zig");
-const shorthands = @import("shorthands.zig");
+const math_utils = @import("utils/math.zig");
+const shorthands = @import("utils/shorthands.zig");
 const Geometry = @import("Geometry.zig");
 const Transform = @import("Transform.zig");
 const Renderer = @import("Renderer.zig");

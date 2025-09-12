@@ -5,13 +5,13 @@ pub const zm = @import("zm");
 pub const init = _context.init;
 pub const deinit = _context.deinit;
 
-pub const _context = @import("./engine/_context.zig");
-pub const defaults = @import("./engine/defaults.zig");
-pub const texture_loader = @import("./engine/texture_loader.zig");
-pub const modelling = @import("./engine/modelling.zig");
-pub const math_utils = @import("./engine/math_utils.zig");
+pub const _context = @import("./engine/utils/_context.zig");
+pub const defaults = @import("./engine/utils/defaults.zig");
+pub const texture_loader = @import("./engine/utils/texture_loader.zig");
+pub const modelling = @import("./engine/utils/modelling.zig");
+pub const math_utils = @import("./engine/utils/math.zig");
 
-pub const shorthands = @import("./engine/shorthands.zig");
+pub const shorthands = @import("./engine/utils/shorthands.zig");
 pub const uploadToBuffer = shorthands.uploadToBuffer;
 pub const parseAttributes = shorthands.parseAttributes;
 

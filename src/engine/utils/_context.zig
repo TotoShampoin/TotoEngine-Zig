@@ -1,7 +1,7 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
-const defaults = @import("defaults.zig");
+const defaults = @import("utils/defaults.zig");
 
 const RenderPass = @import("./RenderPass.zig");
 

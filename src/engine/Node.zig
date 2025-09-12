@@ -3,7 +3,7 @@ const zm = @import("zm");
 
 const Node = @This();
 
-const math_utils = @import("math_utils.zig");
+const math_utils = @import("utils/math.zig");
 const types = @import("types.zig");
 const Transform = @import("Transform.zig");
 const Primitive = types.Primitive;

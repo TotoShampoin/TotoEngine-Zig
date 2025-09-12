@@ -2,7 +2,7 @@ const std = @import("std");
 const sdl3 = @import("sdl3");
 const zm = @import("zm");
 
-const math_utils = @import("math_utils.zig");
+const math_utils = @import("utils/math.zig");
 const mat2ToVecs = math_utils.mat2ToVecs;
 const mat3ToVecs = math_utils.mat3ToVecs;
 const mat4ToVecs = math_utils.mat4ToVecs;
