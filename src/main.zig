@@ -16,8 +16,8 @@ pub fn main() !void {
     const c = engine._context.ctx.?;
     const device = c.device;
 
-    try engine.RenderPass.init();
-    defer engine.RenderPass.deinit();
+    var renderer = try engine.Renderer.init();
+    defer renderer.deinit();
 
     // const white_texture = engine.defaults.white_texture;
     const black_texture = engine.defaults.black_texture;
@@ -47,9 +47,7 @@ pub fn main() !void {
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
     defer sphere_geometry.release();
 
-    var camera = engine.Camera{
-        .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
-    };
+    var camera = engine.Camera{ .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0) };
     var camera_transform = engine.Transform{ .translation = .{ 2, 2, 2 } };
     camera_transform.lookAtLocal(zero, up);
 
@@ -152,7 +150,7 @@ pub fn main() !void {
         earth_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, 0.1 * dt).multiply(earth_node.transform.rotation);
         moon_node.transform.rotation = zm.Quaternionf.fromAxisAngle(up, 0.5 * dt).multiply(moon_node.transform.rotation);
 
-        const render_pass = try engine.RenderPass.begin() orelse continue;
+        const render_pass = try renderer.begin() orelse continue;
 
         render_pass.setCamera(camera, camera_transform.matrix());
         render_pass.setLights(

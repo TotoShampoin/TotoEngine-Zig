@@ -15,6 +15,7 @@ pub const uploadToBuffer = shorthands.uploadToBuffer;
 pub const parseAttributes = shorthands.parseAttributes;
 
 pub const Geometry = @import("./engine/Geometry.zig");
+pub const Renderer = @import("./engine/Renderer.zig");
 pub const RenderPass = @import("./engine/RenderPass.zig");
 pub const Transform = @import("./engine/Transform.zig");
 

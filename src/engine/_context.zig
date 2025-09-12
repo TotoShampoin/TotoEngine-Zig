@@ -1,6 +1,8 @@
 const std = @import("std");
 const sdl3 = @import("sdl3");
 
+const defaults = @import("defaults.zig");
+
 const RenderPass = @import("./RenderPass.zig");
 
 window: sdl3.video.Window,
@@ -31,9 +33,12 @@ pub fn init(
         .window = window,
         .device = device,
     };
+
+    try defaults.init();
 }
 pub fn deinit() void {
     const c = ctx orelse return;
+    defaults.deinit();
     c.device.deinit();
     c.window.deinit();
     sdl3.quit(.everything);
