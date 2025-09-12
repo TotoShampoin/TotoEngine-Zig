@@ -7,7 +7,8 @@ const Transform = @import("Transform.zig");
 pub const Vertex = struct {
     position: zm.Vec3f = .{ 0, 0, 0 },
     normal: zm.Vec3f = .{ 0, 0, 0 },
-    texcoords: zm.Vec2f = .{ 0, 0 },
+    tangent: zm.Vec4f = .{ 0, 0, 0, 1 },
+    texcoord: zm.Vec2f = .{ 0, 0 },
     color: zm.Vec4f = .{ 0, 0, 0, 0 },
 };
 
@@ -20,8 +21,10 @@ pub const Material = struct {
     color: zm.Vec4f,
     specular: zm.Vec4f,
     shininess: f32,
+    normal_strength: f32,
     albedo: sdl3.gpu.TextureSamplerBinding,
     emissive: sdl3.gpu.TextureSamplerBinding,
+    normal: sdl3.gpu.TextureSamplerBinding,
 };
 
 pub const Light = struct {

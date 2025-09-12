@@ -26,6 +26,7 @@ pub fn init() !void {
     normal_texture = tex: {
         const surface = try sdl3.surface.Surface.initFrom(1, 1, sdl3.pixels.Format.array_rgba_32, &.{ 128, 128, 255, 255 });
         defer surface.deinit();
+        try surface.setColorspace(.srgb_linear);
         break :tex try texture_loader.fromSurface(surface, false);
     };
     errdefer device.releaseTexture(normal_texture);

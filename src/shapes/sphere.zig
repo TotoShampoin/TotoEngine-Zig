@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const types = @import("toto-engine").types;
+const modelling = @import("toto-engine").modelling;
 const Model = types.Model;
 const Vertex = types.Vertex;
 
@@ -24,14 +25,17 @@ pub fn sphere() Model {
             for (0..lon) |j| {
                 const fj: f32 = @floatFromInt(j);
                 const phi = 2.0 * std.math.pi * fj / (flon - 1);
-                const x = r * std.math.cos(phi);
-                const z = r * std.math.sin(phi);
+                const c = std.math.cos(phi);
+                const s = std.math.sin(phi);
+                const x = r * c;
+                const z = r * s;
 
                 const idx = i * lon + j;
                 vertices[idx] = Vertex{
                     .position = .{ x, y, z },
                     .normal = .{ x, y, z },
-                    .texcoords = .{ 1 - fj / (flon - 1), 1 - fi / (flat - 1) },
+                    .tangent = .{ -s, 0, c, 1 },
+                    .texcoord = .{ 1 - fj / (flon - 1), 1 - fi / (flat - 1) },
                     .color = .{ 1, 1, 1, 1 },
                 };
             }
@@ -56,6 +60,8 @@ pub fn sphere() Model {
             }
         }
     }
+
+    // modelling.calculateTangents(&vertices, &indices);
 
     return .{
         .vertices = &vertices,

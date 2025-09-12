@@ -166,8 +166,8 @@ fn getAlign(T: type) usize {
     const info = @typeInfo(T);
     return switch (T) {
         @Vector(1, i32), [1]i32, i32 => 4,
-        @Vector(1, u32), [1]u32, u32 => 8,
-        @Vector(1, f32), [1]f32, f32 => 8,
+        @Vector(1, u32), [1]u32, u32 => 4,
+        @Vector(1, f32), [1]f32, f32 => 4,
         @Vector(2, i32), [2]i32 => 8,
         @Vector(2, u32), [2]u32 => 8,
         @Vector(2, f32), [2]f32 => 8,

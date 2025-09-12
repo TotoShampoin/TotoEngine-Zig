@@ -188,7 +188,7 @@ pub fn createPipeline() !sdl3.gpu.GraphicsPipeline {
         .format = .{ .spirv = true },
         .props = .{ .name = "Fragment shader" },
         .num_uniform_buffers = 3,
-        .num_samplers = 2,
+        .num_samplers = 3,
     });
     defer device.releaseShader(fragment);
 

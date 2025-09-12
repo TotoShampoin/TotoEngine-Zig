@@ -16,15 +16,9 @@ pub fn fromSurface(surface: sdl3.surface.Surface, with_mipmaps: bool) !sdl3.gpu.
 
     const width: u32 = @intCast(surface.getWidth());
     const height: u32 = @intCast(surface.getHeight());
-    const color_space = surface.getColorspace().?;
-    const gpu_format = switch (color_space) {
-        .srgb => sdl3.gpu.TextureFormat.r8g8b8a8_unorm_srgb,
-        .srgb_linear => sdl3.gpu.TextureFormat.r8g8b8a8_unorm,
-        else => unreachable,
-    };
 
     const texture = try device.createTexture(.{
-        .format = gpu_format,
+        .format = .r8g8b8a8_unorm_srgb,
         .width = width,
         .height = height,
         .layer_count_or_depth = 1,
@@ -43,7 +37,8 @@ pub fn fromSurface(surface: sdl3.surface.Surface, with_mipmaps: bool) !sdl3.gpu.
 pub fn fillFromSurface(texture: sdl3.gpu.Texture, surface: sdl3.surface.Surface, with_mipmaps: bool) !void {
     const c = _context.ctx orelse return error.NoInit;
     const device = c.device;
-    const formatted_surface = try surface.convertFormat(.array_rgba_32);
+    // const formatted_surface = try surface.convertFormat(.array_rgba_32);
+    const formatted_surface = try surface.convertFormatAndColorspace(.array_rgba_32, null, .srgb, null);
     defer formatted_surface.deinit();
 
     const width: u32 = @intCast(formatted_surface.getWidth());

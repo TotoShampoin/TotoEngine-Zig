@@ -10,10 +10,12 @@ struct Light {
 #define LIGHT_SPOT 1
 #define LIGHT_DIR 2
 
-layout (location = 0) in vec3 v_normal;
-layout (location = 1) in vec2 v_uv;
-layout (location = 2) in vec4 v_color;
-layout (location = 3) in vec3 v_worldpos;
+layout (location = 0) in vec2 v_uv;
+layout (location = 1) in vec4 v_color;
+layout (location = 2) in vec3 v_worldpos;
+// layout (location = 3) in vec3 v_normal;
+// layout (location = 4) in vec3 v_tangent;
+layout (location = 3) in mat3 v_tbn;
 
 layout (location = 0) out vec4 FragColor;
 
@@ -31,13 +33,18 @@ layout(std140, set = 3, binding = 2) uniform MaterialBlock {
     vec4 u_color;
     vec4 u_specular;
     float u_shininess;
+    float u_normal_strength;
 };
 layout(set = 2, binding = 0) uniform sampler2D u_tex;
 layout(set = 2, binding = 1) uniform sampler2D u_emi;
+layout(set = 2, binding = 2) uniform sampler2D u_normal;
 
 void main()
 {
-    vec3 norm = normalize(v_normal);
+    vec3 normalMap = texture(u_normal, v_uv).xyz * 2.0 - 1.0;
+    normalMap = mix(vec3(0.0, 0.0, 1.0), normalMap, u_normal_strength);
+    vec3 norm = normalize(v_tbn * normalMap);
+
     vec3 viewPos = u_camera_worldpos;
     vec3 fragPos = v_worldpos;
     vec3 viewDir = normalize(viewPos - fragPos);
@@ -99,5 +106,7 @@ void main()
     // if(all(equal(specular, vec3(0)))) {
     //     FragColor.rgb = vec3(1,0,0);
     // }
+
+    // FragColor.rgb = norm;
 
 }
