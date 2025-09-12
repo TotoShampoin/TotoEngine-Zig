@@ -41,70 +41,80 @@ pub fn main() !void {
     const moon_texture = try engine.texture_loader.load("res/lroc_color_poles_2k.jpg", true);
     defer device.releaseTexture(moon_texture);
 
-    var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
-
-    var camera_node = engine.Node{
-        .object = .{ .camera = .{
-            .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
-        } },
-    };
-    camera_node.transform.translation = .{ 2, 2, 2 };
-    camera_node.lookAtWorld(zero, up);
-
-    var sun_node = engine.Node{ .object = .{ .light = .{} } };
-    sun_node.transform.translation = .{ -1, 2, 1 };
-    sun_node.lookAtWorld(zero, up);
-
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
     defer sphere_geometry.release();
 
-    var earth_mesh = [_]engine.Primitive{.{
-        .geometry = sphere_geometry,
-        .material = .{
-            .color = .{ 1, 1, 1, 1 },
-            .specular = .{ 0, 0, 0, 0 },
-            .shininess = 0,
-            .albedo = .{
-                .texture = earth_texture,
-                .sampler = sampler,
-            },
-            .emissive = .{
-                .texture = earth_lights_texture,
-                .sampler = sampler,
-            },
-        },
-    }};
-    var earth_children: [1]*engine.Node = undefined;
-    var earth_node = engine.Node{
-        .object = .{ .mesh = .fromOwnedSlice(earth_mesh[0..]) },
-        .children = .initBuffer(&earth_children),
+    var camera = engine.Camera{
+        .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0),
     };
+    var camera_transform = engine.Transform{ .translation = .{ 2, 2, 2 } };
+    camera_transform.lookAtLocal(zero, up);
 
-    var moon_mesh = [_]engine.Primitive{.{
-        .geometry = sphere_geometry,
-        .material = .{
-            .color = .{ 1, 1, 1, 1 },
-            .specular = .{ 0.5, 0.5, 0.5, 1 },
-            .shininess = 8,
-            .albedo = .{
-                .texture = moon_texture,
-                .sampler = sampler,
-            },
-            .emissive = .{
-                .texture = black_texture,
-                .sampler = sampler,
-            },
-        },
-    }};
-    var moon_node = engine.Node{
-        .object = .{ .mesh = .fromOwnedSlice(moon_mesh[0..]) },
-        .parent = &earth_node,
+    const sun = engine.Light{ .type = .directional };
+    var sun_transform = engine.Transform{ .translation = .{ -1, 2, 1 } };
+    sun_transform.lookAtLocal(zero, up);
+
+    var earth_node: engine.Node = undefined;
+    var moon_node: engine.Node = undefined;
+
+    var moon_probe_node = engine.Node{
+        .object = .{ .light = &.{
+            .type = .point,
+            .color = .{ 1, 0, 1, 1 },
+            .range = 1,
+        } },
+        .parent = &moon_node,
         .transform = .{
             .translation = .{ 1.5, 0, 0 },
+        },
+    };
+
+    moon_node = engine.Node{
+        .object = .{ .mesh = &.{.{
+            .geometry = &sphere_geometry,
+            .material = &.{
+                .color = .{ 1, 1, 1, 1 },
+                .specular = .{ 0.5, 0.5, 0.5, 1 },
+                .shininess = 8,
+                .albedo = .{
+                    .texture = moon_texture,
+                    .sampler = sampler,
+                },
+                .emissive = .{
+                    .texture = black_texture,
+                    .sampler = sampler,
+                },
+            },
+        }} },
+        .parent = &earth_node,
+        .children = &.{&moon_probe_node},
+        .transform = .{
+            .translation = .{ 2, 0, 0 },
             .scaling = .{ 0.25, 0.25, 0.25 },
         },
     };
-    earth_node.children.appendAssumeCapacity(&moon_node);
+
+    earth_node = engine.Node{
+        .object = .{ .mesh = &.{.{
+            .geometry = &sphere_geometry,
+            .material = &.{
+                .color = .{ 1, 1, 1, 1 },
+                .specular = .{ 0, 0, 0, 0 },
+                .shininess = 1,
+                .albedo = .{
+                    .texture = earth_texture,
+                    .sampler = sampler,
+                },
+                .emissive = .{
+                    .texture = earth_lights_texture,
+                    .sampler = sampler,
+                },
+            },
+        }} },
+        .children = &.{&moon_node},
+    };
+
+    var fps_capper = sdl3.extras.FramerateCapper(f32){ .mode = .unlimited };
 
     var running = true;
     while (running) {
@@ -113,7 +123,7 @@ pub fn main() !void {
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
-                    camera_node.object.?.camera.projection = .perspective(
+                    camera.projection = .perspective(
                         std.math.degreesToRadians(fov),
                         @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
                         0.1,
@@ -129,18 +139,21 @@ pub fn main() !void {
 
         const render_pass = try engine.RenderPass.begin() orelse continue;
 
-        render_pass.setCamera(camera_node.object.?.camera, camera_node.worldMatrix());
-        render_pass.setLights(&.{sun_node.object.?.light}, &.{sun_node.worldMatrix()});
+        render_pass.setCamera(camera, camera_transform.matrix());
+        render_pass.setLights(
+            &.{ sun, moon_probe_node.object.?.light.* },
+            &.{ sun_transform.matrix(), moon_probe_node.worldMatrix() },
+        );
 
         render_pass.setTransform(earth_node.worldMatrix());
-        for (earth_node.object.?.mesh.items) |primitive| {
-            render_pass.setMaterial(primitive.material);
-            render_pass.draw(primitive.geometry);
+        for (earth_node.object.?.mesh) |primitive| {
+            render_pass.setMaterial(primitive.material.*);
+            render_pass.draw(primitive.geometry.*);
         }
         render_pass.setTransform(moon_node.worldMatrix());
-        for (moon_node.object.?.mesh.items) |primitive| {
-            render_pass.setMaterial(primitive.material);
-            render_pass.draw(primitive.geometry);
+        for (moon_node.object.?.mesh) |primitive| {
+            render_pass.setMaterial(primitive.material.*);
+            render_pass.draw(primitive.geometry.*);
         }
 
         try render_pass.end();

@@ -88,7 +88,16 @@ void main()
     // Emissive
     emissive = texture(u_emi, v_uv).rgb;
 
-    vec3 finalColor = (texColor.rgb * u_color.rgb * diffuse) + (specular * u_specular.rgb) + emissive;
+    // Fresnel effect (Schlick's approximation)
+    float fresnelFactor = pow(1.0 - max(dot(norm, viewDir), 0.0), 5.0);
+
+    vec3 finalColor = (texColor.rgb * u_color.rgb * diffuse) + (specular * u_specular.rgb) + emissive + (texColor.rgb * fresnelFactor);
     FragColor = vec4(finalColor, texColor.a * u_color.a);
+    
+    // FragColor = vec4(specular, 1.0);
+
+    // if(all(equal(specular, vec3(0)))) {
+    //     FragColor.rgb = vec3(1,0,0);
+    // }
 
 }

@@ -5,6 +5,7 @@ const zm = @import("zm");
 const _context = @import("_context.zig");
 const defaults = @import("defaults.zig");
 const types = @import("types.zig");
+const math_utils = @import("math_utils.zig");
 const shorthands = @import("shorthands.zig");
 const Geometry = @import("Geometry.zig");
 const Transform = @import("Transform.zig");
@@ -130,7 +131,13 @@ pub fn setLights(self: RenderPass, lights: []const types.Light, world_matrices: 
         .light_count = @intCast(lights.len),
     };
     for (lights, world_matrices, 0..) |l, m, i| {
+        const sx = zm.vec.len(zm.vec.xyz(m.multiplyVec4(.{ 1, 0, 0, 0 })));
+        const sy = zm.vec.len(zm.vec.xyz(m.multiplyVec4(.{ 0, 1, 0, 0 })));
+        const sz = zm.vec.len(zm.vec.xyz(m.multiplyVec4(.{ 0, 0, 1, 0 })));
+        const max_scale = @max(sx, @max(sy, sz));
+
         lu.lights[i] = l;
+        lu.lights[i].range = l.range * max_scale;
         lu.matrices[i] = m;
     }
 
@@ -144,7 +151,7 @@ const TransformUniform = struct {
 pub fn setTransform(self: RenderPass, model: zm.Mat4f) void {
     const tu = TransformUniform{
         .model = model,
-        .normal_matix = shorthands.mat4toMat3(model.inverse().transpose()),
+        .normal_matix = math_utils.mat4toMat3(model.inverse().transpose()),
     };
 
     self.pushVertexUniform(TransformUniform, tu, 1);
