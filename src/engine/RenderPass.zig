@@ -90,9 +90,8 @@ const CameraUniform = struct {
     projection: zm.Mat4f,
     vp: zm.Mat4f,
 };
-pub fn setCamera(self: RenderPass, camera: types.Camera, world_matrix: zm.Mat4f) void {
+pub fn setCamera(self: RenderPass, projection: zm.Mat4f, world_matrix: zm.Mat4f) void {
     const view = world_matrix.inverse();
-    const projection = camera.projection;
     const position = zm.Vec3f{ world_matrix.data[3], world_matrix.data[7], world_matrix.data[11] };
 
     const cu = CameraUniform{

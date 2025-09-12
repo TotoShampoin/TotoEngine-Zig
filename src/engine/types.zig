@@ -39,6 +39,7 @@ pub const Primitive = struct {
     geometry: *const Geometry,
     material: *const Material,
 };
-pub const Camera = struct {
-    projection: zm.Mat4f,
-};
+// pub const Camera = struct {
+//     projection: zm.Mat4f,
+// };
+pub const Camera = zm.Mat4f;

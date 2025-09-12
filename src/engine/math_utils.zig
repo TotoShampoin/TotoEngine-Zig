@@ -1,5 +1,23 @@
 const zm = @import("zm");
 
+pub fn cast(T: type, val: anytype) T {
+    const vi = @typeInfo(@TypeOf(val));
+    const ti = @typeInfo(T);
+    return switch (vi) {
+        .int => switch (ti) {
+            .int => @intCast(val),
+            .float => @floatFromInt(val),
+            else => @panic("not implemented"),
+        },
+        .float => switch (ti) {
+            .float => @floatCast(val),
+            .int => @intFromFloat(val),
+            else => @panic("not implemented"),
+        },
+        else => @panic("not implemented"),
+    };
+}
+
 pub fn multiplyPoint(m: zm.Mat4f, p: zm.Vec3f) zm.Vec3f {
     return .{
         m.data[0] * p[0] + m.data[1] * p[1] + m.data[2] * p[2] + m.data[3] * 1.0,

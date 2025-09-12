@@ -8,6 +8,7 @@ const fov = 60.0;
 
 const zero = zm.vec.zero(3, f32);
 const up = zm.vec.up(f32);
+const cast = engine.math_utils.cast;
 
 pub fn main() !void {
     try engine.init("TotoEngine test", 960, 720, .{ .resizable = true, .vulkan = true });
@@ -47,7 +48,7 @@ pub fn main() !void {
     const sphere_geometry = try engine.Geometry.create(@import("shapes/sphere.zig").sphere());
     defer sphere_geometry.release();
 
-    var camera = engine.Camera{ .projection = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0) };
+    var camera: engine.Camera = .perspective(std.math.degreesToRadians(fov), 4.0 / 3.0, 0.1, 100.0);
     var camera_transform = engine.Transform{ .translation = .{ 2, 2, 2 } };
     camera_transform.lookAtLocal(zero, up);
 
@@ -136,12 +137,7 @@ pub fn main() !void {
         while (sdl3.events.poll()) |ev|
             switch (ev) {
                 .window_resized => |e| {
-                    camera.projection = .perspective(
-                        std.math.degreesToRadians(fov),
-                        @as(f32, @floatFromInt(e.width)) / @as(f32, @floatFromInt(e.height)),
-                        0.1,
-                        100.0,
-                    );
+                    camera = .perspective(std.math.degreesToRadians(fov), cast(f32, e.width) / cast(f32, e.height), 0.1, 100.0);
                 },
                 .quit => running = false,
                 else => {},

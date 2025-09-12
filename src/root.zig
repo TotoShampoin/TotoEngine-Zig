@@ -9,6 +9,7 @@ pub const _context = @import("./engine/_context.zig");
 pub const defaults = @import("./engine/defaults.zig");
 pub const texture_loader = @import("./engine/texture_loader.zig");
 pub const modelling = @import("./engine/modelling.zig");
+pub const math_utils = @import("./engine/math_utils.zig");
 
 pub const shorthands = @import("./engine/shorthands.zig");
 pub const uploadToBuffer = shorthands.uploadToBuffer;
